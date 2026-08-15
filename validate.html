@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess Trainer — engine self-test</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="test-page">
+  <h1>Engine self-test</h1>
+  <p class="sub">Perft counts against the published reference values, then every puzzle line and every
+     opening line replayed move by move — including an exhaustive check that each claimed mate really is
+     forced, and an engine check that each solution is not simply refuted.
+     <a href="?deep=1">Run the deep version</a> (engine-checks every move of every solution; slower).
+     <a href="index.html">← back to the trainer</a></p>
+  <div id="summary" class="test-summary">Running…</div>
+  <div id="failures"></div>
+  <div id="out"></div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/openings.js"></script>
+<script>
+(function () {
+  'use strict';
+  var out = document.getElementById('out');
+  var pass = 0, fail = 0;
+  var failures = [];
+  /* ?deep=1 runs the engine oracle on every move of every solution instead of
+     just the first. Slower, but worth it after editing the puzzle set. */
+  var DEEP = /[?&]deep=1/.test(location.search);
+
+  function report(ok, name, detail) {
+    if (ok) pass++; else { fail++; failures.push(name + ' — ' + detail); }
+    var row = document.createElement('div');
+    row.className = 'test-row ' + (ok ? 'pass' : 'fail');
+    row.innerHTML = '<span class="mark">' + (ok ? '✓' : '✕') + '</span>' +
+      '<span>' + name + '</span><span>' + (detail || '') + '</span>';
+    out.appendChild(row);
+  }
+
+  function section(title) {
+    var h = document.createElement('h3');
+    h.textContent = title;
+    out.appendChild(h);
+  }
+
+  /* ------------------------------------------------------------- perft --- */
+  section('Perft (move generation)');
+  var PERFT = [
+    { name: 'startpos', fen: Chess.DEFAULT_FEN, counts: [20, 400, 8902, 197281] },
+    { name: 'kiwipete', fen: 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', counts: [48, 2039, 97862] },
+    { name: 'position 3', fen: '8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', counts: [14, 191, 2812, 43238] },
+    { name: 'position 4', fen: 'r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1', counts: [6, 264, 9467] },
+    { name: 'position 5', fen: 'rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8', counts: [44, 1486, 62379] }
+  ];
+  PERFT.forEach(function (p) {
+    var g = new Chess(p.fen);
+    p.counts.forEach(function (expected, i) {
+      var depth = i + 1;
+      var got = g.perft(depth);
+      report(got === expected, p.name + ' depth ' + depth, got + (got === expected ? '' : ' (expected ' + expected + ')'));
+    });
+  });
+
+  /* ------------------------------------------------------ FEN round trip -- */
+  section('FEN round trip');
+  PERFT.concat(PUZZLES.map(function (p) { return { name: p.id, fen: p.fen }; })).forEach(function (p) {
+    var g = new Chess(p.fen);
+    report(g.fen() === p.fen, 'fen ' + p.name, g.fen() === p.fen ? '' : g.fen());
+  });
+
+  /* Exhaustive: can `mater` force mate within `plies`, against ANY defence? */
+  function forcedMate(g, plies, mater) {
+    if (g.turnColor === mater) {
+      if (plies <= 0) return false;
+      var moves = g.generateMoves();
+      for (var i = 0; i < moves.length; i++) {
+        g.makeMove(moves[i]);
+        var ok = g.isCheckmate() || forcedMate(g, plies - 1, mater);
+        g.undoMove();
+        if (ok) return true;
+      }
+      return false;
+    }
+    var replies = g.generateMoves();
+    if (!replies.length) return g.isCheckmate();   /* mated is good, stalemate is not */
+    if (plies <= 0) return false;
+    for (var j = 0; j < replies.length; j++) {
+      g.makeMove(replies[j]);
+      var still = forcedMate(g, plies - 1, mater);
+      g.undoMove();
+      if (!still) return false;
+    }
+    return true;
+  }
+
+  /* Does the engine agree this is the move? Catches solutions that simply hang. */
+  function oracleVerdict(fen, uci) {
+    var g = new Chess(fen);
+    var engine = new ChessAI.Engine();
+    var best = engine.think(g, { depth: 5, time: 1500, skill: 3 });
+    if (!best || !best.move) return { ok: false, detail: 'engine found no move' };
+    var bestUci = Chess.algebraic(best.move.from) + Chess.algebraic(best.move.to) +
+      ((best.move.flags & Chess.FLAG_PROMO) ? Chess.SYMBOLS[best.move.promotion] : '');
+    if (bestUci === uci || bestUci === uci.slice(0, 4)) return { ok: true, detail: uci };
+    /* not the top choice — is it at least as good? */
+    var g2 = new Chess(fen);
+    if (!g2.move(uci)) return { ok: false, detail: 'illegal' };
+    var e2 = new ChessAI.Engine();
+    var reply = e2.think(g2, { depth: 4, time: 1200, skill: 3 });
+    var ourScore = reply ? -reply.score : 0;
+    var gap = best.score - ourScore;
+    return {
+      ok: gap <= 60,
+      detail: uci + ' vs engine ' + bestUci + ' (' + (gap > 0 ? '-' : '+') + Math.abs(gap) + 'cp)'
+    };
+  }
+
+  /* ---------------------------------------------------------- puzzles ---- */
+  section('Puzzle solutions');
+  var ids = {};
+  PUZZLES.forEach(function (p) {
+    if (ids[p.id]) report(false, p.id, 'duplicate id');
+    ids[p.id] = true;
+
+    var g;
+    try { g = new Chess(p.fen); }
+    catch (e) { report(false, p.id + ' fen', e.message); return; }
+
+    if (g.inCheck()) report(false, p.id + ' start', 'side to move already in check');
+    if (p.moves.length % 2 === 0 && (p.goal === 'mate' || p.goal === 'trap')) {
+      report(false, p.id + ' shape', 'a mating line must end on the solver\'s move');
+    }
+
+    var ok = true;
+    var solverPositions = [];       /* fen before each of the solver's own moves */
+    for (var i = 0; i < p.moves.length; i++) {
+      if (i % 2 === 0) solverPositions.push(g.fen());
+      var m = g.move(p.moves[i]);
+      if (!m) { report(false, p.id + ' move ' + (i + 1), 'illegal: ' + p.moves[i]); ok = false; break; }
+    }
+    if (!ok) return;
+
+    if (p.goal === 'mate') {
+      report(g.isCheckmate(), p.id + ' mates', g.isCheckmate() ? p.moves.length + ' plies' : 'final position is not mate');
+      /* and it must be mate against every defence, not just the scripted one */
+      var start = new Chess(p.fen);
+      var mater = start.turnColor;
+      report(forcedMate(start, p.moves.length, mater), p.id + ' mate is forced',
+        'mate in ' + Math.ceil(p.moves.length / 2) + ' against any defence');
+    } else if (p.goal === 'trap') {
+      report(g.isCheckmate(), p.id + ' punishes the bait', g.isCheckmate() ? '' : 'final position is not mate');
+      /* forced from the moment Black takes the bait */
+      var afterBait = new Chess(p.fen);
+      afterBait.move(p.moves[0]);
+      afterBait.move(p.moves[1]);
+      report(forcedMate(afterBait, p.moves.length - 2, afterBait.turnColor),
+        p.id + ' forced once the bait is taken', '');
+      report(!!p.refutation, p.id + ' documents the refutation', p.refutation || 'MISSING');
+    } else {
+      /* material puzzles: the solver must come out clearly ahead */
+      var before = material(new Chess(p.fen));
+      var after = material(g);
+      var solver = new Chess(p.fen).turn();
+      var gain = solver === 'w' ? (after - before) : (before - after);
+      report(gain >= 2, p.id + ' wins material', (gain >= 0 ? '+' : '') + gain + ' pawns');
+    }
+
+    /* Every move the solver plays must survive the engine's scrutiny. This is the
+       check that a solution which simply hangs a piece to a reply would fail. */
+    if (p.oracle !== false) {
+      var upTo = (DEEP && p.oracle !== 'first') ? solverPositions.length : 1;
+      for (var s = 0; s < upTo; s++) {
+        var v = oracleVerdict(solverPositions[s], p.moves[s * 2]);
+        report(v.ok, p.id + ' move ' + (s + 1) + ' survives the engine', v.detail);
+      }
+    }
+
+    /* alternative solutions the trainer also accepts must at least be legal and winning */
+    (p.alts || []).forEach(function (alt, n) {
+      var ga = new Chess(p.fen);
+      var legalAlt = !!ga.move(alt.uci);
+      report(legalAlt && !!alt.note, p.id + ' alt ' + (n + 1) + ' is legal and explained', alt.uci);
+      if (legalAlt) {
+        var va = oracleVerdict(p.fen, alt.uci);
+        report(va.ok, p.id + ' alt ' + (n + 1) + ' really wins', va.detail);
+      }
+    });
+
+    report(!!p.hint && !!p.explain, p.id + ' has coaching text', '');
+  });
+
+  function material(g) {
+    var v = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, total = 0;
+    var grid = g.grid();
+    for (var r = 0; r < 8; r++) for (var f = 0; f < 8; f++) {
+      var c = grid[r][f];
+      if (!c.type) continue;
+      total += (c.color === 'w' ? 1 : -1) * v[c.type];
+    }
+    return total;
+  }
+
+  /* --------------------------------------------------------- openings ---- */
+  section('Opening lines');
+  OPENINGS.forEach(function (o) {
+    var g = new Chess();
+    var bad = null;
+    for (var i = 0; i < o.moves.length; i++) {
+      if (!g.move(o.moves[i])) { bad = (i + 1) + '. ' + o.moves[i]; break; }
+    }
+    report(!bad, o.name, bad ? 'illegal move at ply ' + bad : o.moves.length + ' plies OK');
+    var noteKeys = Object.keys(o.notes || {});
+    var badNote = noteKeys.filter(function (k) { return +k < 0 || +k >= o.moves.length; });
+    report(badNote.length === 0, o.name + ' notes', badNote.length ? 'out of range: ' + badNote.join(',') : '');
+  });
+
+  /* ------------------------------------------------- special-move sanity -- */
+  section('Special moves');
+  (function () {
+    var g = new Chess('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+    g.move('e1g1');
+    report(g.fen().split(' ')[0] === 'r3k2r/8/8/8/8/8/8/R4RK1', 'white kingside castling', g.fen().split(' ')[0]);
+    g.move('e8c8');
+    report(g.fen().split(' ')[0] === '2kr3r/8/8/8/8/8/8/R4RK1', 'black queenside castling', g.fen().split(' ')[0]);
+  })();
+  (function () {
+    var g = new Chess('8/8/8/8/8/8/4k3/4K2R w K - 0 1');
+    var m = g.moves({ verbose: true }).filter(function (x) { return x.uci === 'e1g1'; });
+    report(m.length === 0, 'no castling out of check', m.length ? 'allowed it' : '');
+  })();
+  (function () {
+    var g = new Chess('rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3');
+    var m = g.move('e5f6');
+    report(!!m && m.san === 'exf6', 'en passant capture', m ? m.san : 'rejected');
+    report(!!m && g.grid()[2][5].type === 'p' && g.grid()[3][5].type === null, 'en passant removes the pawn', '');
+  })();
+  (function () {
+    var g = new Chess('8/P7/8/8/8/8/8/K6k w - - 0 1');
+    var promos = g.moves({ verbose: true }).filter(function (m) { return m.from === 'a7'; });
+    report(promos.length === 4, 'four promotion choices', promos.length + ' found');
+    g.move('a7a8n');
+    report(g.get('a8').type === 'n', 'underpromotion to knight', g.get('a8') ? g.get('a8').type : 'empty');
+  })();
+  (function () {
+    var g = new Chess('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
+    report(g.isStalemate(), 'stalemate detected', g.isStalemate() ? '' : 'missed it');
+    report(!g.isCheckmate(), 'stalemate is not mate', '');
+  })();
+  (function () {
+    var g = new Chess('rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3');
+    report(g.isCheckmate(), "fool's mate detected", g.isCheckmate() ? '' : 'missed it');
+  })();
+  (function () {
+    var g = new Chess('8/8/8/8/8/8/8/K1k5 w - - 0 1');
+    report(g.insufficientMaterial(), 'K vs K is a draw', '');
+  })();
+  (function () {
+    /* undo must restore the position exactly, castling rights and all */
+    var g = new Chess('r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1');
+    var before = g.fen();
+    var moves = g.moves();
+    var mismatched = 0;
+    for (var i = 0; i < moves.length; i++) {
+      g.makeMove(moves[i]);
+      g.undoMove();
+      if (g.fen() !== before) mismatched++;
+    }
+    report(mismatched === 0, 'make/undo is lossless', mismatched + ' of ' + moves.length + ' mismatched');
+  })();
+
+  /* --------------------------------------------------------------- ai ---- */
+  section('Search');
+  (function () {
+    var g = new Chess('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1');
+    var e = new ChessAI.Engine();
+    var r = e.think(g, { depth: 3, time: 2000, skill: 3 });
+    var uci = Chess.algebraic(r.move.from) + Chess.algebraic(r.move.to);
+    report(uci === 'a1a8', 'engine finds mate in 1', uci);
+  })();
+  (function () {
+    var g = new Chess('1r4k1/5ppp/8/8/8/8/3Q1PPP/3R2K1 w - - 0 1');
+    var e = new ChessAI.Engine();
+    var r = e.think(g, { depth: 4, time: 3000, skill: 3 });
+    var uci = Chess.algebraic(r.move.from) + Chess.algebraic(r.move.to);
+    report(uci === 'd2d8', 'engine finds the mate in 2', uci);
+  })();
+  (function () {
+    var g = new Chess('4k3/8/8/8/8/8/8/4K2R w K - 0 1');
+    var e = new ChessAI.Engine();
+    var r = e.think(g, { depth: 3, time: 1500, skill: 3 });
+    report(!!r && !!r.move, 'engine returns a legal move', r ? Chess.algebraic(r.move.from) + Chess.algebraic(r.move.to) : 'null');
+  })();
+
+  if (failures.length) {
+    document.getElementById('failures').innerHTML =
+      '<h3>Failures</h3>' + failures.map(function (f) {
+        return '<div class="test-row fail"><span class="mark">✕</span><span>' + f + '</span><span></span></div>';
+      }).join('');
+  }
+  var s = document.getElementById('summary');
+  s.textContent = fail === 0
+    ? '✓ all ' + pass + ' checks passed'
+    : '✕ ' + fail + ' failed, ' + pass + ' passed';
+  s.style.color = fail === 0 ? 'var(--good)' : 'var(--bad)';
+  window.__RESULT__ = { pass: pass, fail: fail, failures: failures };
+  console.log('SELFTEST', JSON.stringify(window.__RESULT__));
+})();
+</script>
+</body>
+</html>

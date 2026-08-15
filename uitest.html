@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chess Trainer — UI harness</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* flex: none — otherwise the growing report column shrinks the iframe mid-run
+     and every geometry measurement drifts. */
+  iframe { flex: none; width: 1000px; height: 900px; border: 1px solid var(--line); border-radius: 10px; }
+  .harness { display: flex; gap: 20px; align-items: flex-start; padding: 20px; }
+  .harness > div { flex: 1; min-width: 0; }
+</style>
+</head>
+<body>
+<div class="harness">
+  <div style="flex:1">
+    <h1>UI harness</h1>
+    <p class="sub">Drives the real page in an iframe with synthetic pointer events. <a href="index.html">← trainer</a></p>
+    <div id="summary" class="test-summary">Running…</div>
+    <div id="out"></div>
+  </div>
+  <iframe id="app"></iframe>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var out = document.getElementById('out');
+  var pass = 0, fail = 0;
+
+  function report(ok, name, detail) {
+    if (ok) pass++; else fail++;
+    var row = document.createElement('div');
+    row.className = 'test-row ' + (ok ? 'pass' : 'fail');
+    row.innerHTML = '<span class="mark">' + (ok ? '✓' : '✕') + '</span><span>' + name +
+      '</span><span>' + (detail || '') + '</span>';
+    out.appendChild(row);
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  var frame = document.getElementById('app');
+  /* same origin as the iframe, so snapshot and clear the real save before it boots */
+  var saved = localStorage.getItem('chesstrainer.v2');
+  localStorage.removeItem('chesstrainer.v2');
+
+  function point(doc, square) {
+    var el = doc.querySelector('.sq[data-square="' + square + '"]');
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    return { el: el, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  function fire(win, el, type, x, y) {
+    var ev = new win.PointerEvent(type, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, isPrimary: true
+    });
+    el.dispatchEvent(ev);
+  }
+
+  /* click-to-move: press+release on the origin, then press on the destination */
+  async function playMove(win, doc, from, to, promo) {
+    var a = point(doc, from), b = point(doc, to);
+    if (!a || !b) return { ok: false, why: 'no square ' + from + '/' + to };
+    fire(win, a.el, 'pointerdown', a.x, a.y);
+    fire(win, win, 'pointerup', a.x, a.y);
+    await sleep(30);
+    var sel = doc.querySelector('.sq.selected');
+    var targets = doc.querySelectorAll('.sq.target, .sq.target-capture').length;
+    var under = doc.elementFromPoint(a.x, a.y);
+    var hitTest = under ? (under.dataset.square || under.className) : 'nothing';
+    var ct = win.ChessTrainer;
+    if (ct) {
+      var modeName = Object.keys(ct.modes.all).filter(function (k) { return ct.modes.all[k] === ct.modes.current; })[0];
+      hitTest += ' int=' + ct.board.interactive + ' or=' + ct.board.orientation +
+                 ' mode=' + modeName + ' locked=' + ct.modes.current.locked +
+                 ' sq=' + (ct.board.squares[from] === a.el ? 'same' : 'STALE') +
+                 ' spf=' + ct.board._squareFromPoint(a.x, a.y) +
+                 ' spfTo=' + ct.board._squareFromPoint(b.x, b.y);
+    }
+    fire(win, b.el, 'pointerdown', b.x, b.y);
+    fire(win, win, 'pointerup', b.x, b.y);
+    await sleep(60);
+    /* a promotion opens the picker and waits for a choice */
+    var overlay = doc.querySelector('.promo-overlay:not(.hidden)');
+    if (overlay) {
+      var order = { q: 0, r: 1, b: 2, n: 3 };
+      overlay.querySelectorAll('.promo-btn')[order[promo || 'q']].click();
+      await sleep(60);
+      hitTest += ' promo=' + (promo || 'q');
+    }
+    return {
+      ok: !!sel,
+      why: from + '→' + to + ' sel=' + (sel ? sel.dataset.square : 'none') +
+           ' targets=' + targets + ' hit=' + hitTest
+    };
+  }
+
+  frame.addEventListener('load', function () { run().catch(function (e) { report(false, 'harness crashed', e.message); finish(); }); });
+  /* the iframe src is set from script, so a hard reload of this page does not
+     bypass its cache — bust it explicitly or you will test a stale build */
+  frame.src = 'index.html?harness=' + Date.now();
+
+  async function run() {
+    var win = frame.contentWindow, doc = frame.contentDocument;
+    await sleep(300);
+
+    /* ------------------------------------------------------------ tactics */
+    report(!!doc.querySelector('#board .board-grid'), 'board rendered', '');
+    report(doc.querySelectorAll('#board .sq').length === 64, '64 squares', doc.querySelectorAll('#board .sq').length + '');
+
+    /* geometry: rectangular squares silently break click-to-square hit testing */
+    var gridRect = doc.querySelector('#board .board-grid').getBoundingClientRect();
+    var sqRect = doc.querySelector('#board .sq').getBoundingClientRect();
+    report(Math.abs(gridRect.width - gridRect.height) < 1.5, 'board is square',
+      Math.round(gridRect.width) + '×' + Math.round(gridRect.height));
+    report(Math.abs(sqRect.width - sqRect.height) < 1.5, 'squares are square',
+      Math.round(sqRect.width) + '×' + Math.round(sqRect.height));
+    report(doc.querySelectorAll('#board .piece').length > 0, 'pieces rendered',
+      doc.querySelectorAll('#board .piece').length + ' pieces');
+
+    /* count how many times a single synthetic click reaches the judge */
+    var judgeCalls = 0;
+    var origJudge = win.ChessTrainer.modes.all.puzzles.judge;
+    win.ChessTrainer.modes.all.puzzles.judge = function () {
+      judgeCalls++;
+      return origJudge.apply(this, arguments);
+    };
+
+    var id = doc.querySelector('#puzzle-id').textContent.toLowerCase();
+    var puzzle = win.PUZZLES.filter(function (p) { return p.id === id; })[0];
+    report(!!puzzle, 'a puzzle is loaded', id);
+
+    /* a wrong move must be refused and taken back */
+    var legal = new win.Chess(puzzle.fen).moves({ verbose: true })
+      .filter(function (m) { return m.uci !== puzzle.moves[0]; });
+    if (legal.length) {
+      var pieceCountBefore = doc.querySelectorAll('#board .piece').length;
+      await playMove(win, doc, legal[0].from, legal[0].to);
+      var st = doc.querySelector('#puzzle-status');
+      report(st.classList.contains('bad'), 'wrong move is rejected', st.textContent.slice(0, 46));
+      report(doc.querySelectorAll('#board .piece').length === pieceCountBefore, 'wrong move is taken back', '');
+      var afterWrong = win.JSON.parse(win.localStorage.getItem('chesstrainer.v2'));
+      report(judgeCalls === 1, 'one click produces one move', 'judge calls=' + judgeCalls);
+      report(afterWrong.attempts === 1, 'one wrong move counts once', 'attempts=' + afterWrong.attempts);
+    }
+
+    /* now solve it properly */
+    for (var i = 0; i < puzzle.moves.length; i += 2) {
+      var uci = puzzle.moves[i];
+      var r = await playMove(win, doc, uci.slice(0, 2), uci.slice(2, 4), uci.charAt(4));
+      report(r.ok, 'solver move ' + (i / 2 + 1) + ' selected a piece', r.why);
+      await sleep(650);
+    }
+    var status = doc.querySelector('#puzzle-status').textContent;
+    report(/Solved/.test(status), 'puzzle solves through the UI', status.slice(0, 50));
+    report(!doc.querySelector('#puzzle-explain').classList.contains('hidden'), 'explanation revealed', '');
+    var saveState = win.JSON.parse(win.localStorage.getItem('chesstrainer.v2'));
+    report(saveState.attempts === 1, 'progress saved', 'attempts=' + saveState.attempts +
+      ' solved=' + saveState.solved + ' rating=' + saveState.rating);
+    report(saveState.solved === 0, 'a peeked/failed solve does not count as solved', '');
+
+    doc.querySelector('#puzzle-next').click();
+    await sleep(200);
+    report(doc.querySelector('#puzzle-id').textContent.toLowerCase() !== id, 'next puzzle loads',
+      doc.querySelector('#puzzle-id').textContent);
+
+    /* --------------------------------------------------- difficulty bands */
+    doc.querySelector('#puzzle-band').value = 'hard';
+    doc.querySelector('#puzzle-band').dispatchEvent(new win.Event('change'));
+    await sleep(200);
+    var hardId = doc.querySelector('#puzzle-id').textContent.toLowerCase();
+    var hard = win.PUZZLES.filter(function (p) { return p.id === hardId; })[0];
+    report(hard && hard.rating >= 1450, 'hard band serves a hard puzzle',
+      hardId + ' rated ' + (hard ? hard.rating : '?'));
+    doc.querySelector('#puzzle-band').value = 'easy';
+    doc.querySelector('#puzzle-band').dispatchEvent(new win.Event('change'));
+    await sleep(200);
+    var easyId = doc.querySelector('#puzzle-id').textContent.toLowerCase();
+    var easy = win.PUZZLES.filter(function (p) { return p.id === easyId; })[0];
+    report(easy && easy.rating < 1000, 'easy band serves an easy puzzle',
+      easyId + ' rated ' + (easy ? easy.rating : '?'));
+    report(doc.querySelector('#puzzle-count').textContent === String(win.PUZZLES.length),
+      'puzzle count is shown', doc.querySelector('#puzzle-count').textContent);
+
+    /* --------------------------------------------------------------- play */
+    doc.querySelector('.tab[data-mode="play"]').click();
+    await sleep(100);
+    report(!doc.querySelector('.panel[data-mode="play"]').classList.contains('hidden'), 'play tab opens', '');
+    report(!doc.querySelector('#eval').classList.contains('hidden'), 'eval bar shown in play mode', '');
+    doc.querySelector('#play-color').value = 'w';
+    doc.querySelector('#play-level').value = '0';
+    doc.querySelector('#play-new').click();
+    await sleep(200);
+    report(doc.querySelectorAll('#board .piece').length === 32, 'new game has 32 pieces',
+      doc.querySelectorAll('#board .piece').length + '');
+
+    var ct = win.ChessTrainer;
+    report(ct.board.interactive, 'board is interactive in play mode',
+      'interactive=' + ct.board.interactive + ' thinking=' + ct.modes.all.play.thinking +
+      ' over=' + ct.modes.all.play.over + ' human=' + ct.modes.all.play.human +
+      ' turn=' + ct.modes.all.play.game.turn() + ' current=' + (ct.modes.current === ct.modes.all.play));
+    var pg = ct.modes.all.play.game;
+    report(pg.moves({ square: 'e2' }).length === 2, 'e2 has two legal moves',
+      pg.moves({ square: 'e2' }).length + '');
+    var pgGeom = doc.querySelector('#board .sq').getBoundingClientRect();
+    report(Math.abs(pgGeom.width - pgGeom.height) < 1.5, 'squares stay square beside the eval bar',
+      Math.round(pgGeom.width) + '×' + Math.round(pgGeom.height));
+    var evalW = doc.querySelector('#eval').getBoundingClientRect().width;
+    var gridW = doc.querySelector('#board .board-grid').getBoundingClientRect().width;
+    var wrapW = doc.querySelector('.board-wrap').getBoundingClientRect().width;
+    report(evalW < 40 && gridW + evalW + 12 >= wrapW - 2, 'board fills the column beside the eval bar',
+      'eval=' + Math.round(evalW) + ' board=' + Math.round(gridW) + ' wrap=' + Math.round(wrapW));
+
+    var pr = await playMove(win, doc, 'e2', 'e4');
+    report(pr.ok, 'play mode selects e2', pr.why);
+    await sleep(1400);
+    var moveText = doc.querySelector('#move-list').textContent;
+    report(/e4/.test(moveText), 'human move recorded', moveText.trim().slice(0, 24));
+    report(doc.querySelectorAll('#move-list .san').length >= 2, 'engine replied', moveText.trim().slice(0, 24));
+    report(doc.querySelector('#play-status').textContent === 'Your move.', 'turn handed back',
+      doc.querySelector('#play-status').textContent);
+
+    doc.querySelector('#play-undo').click();
+    await sleep(200);
+    report(doc.querySelectorAll('#board .piece').length === 32, 'take back restores the position', '');
+
+    /* ----------------------------------------------------------- openings */
+    doc.querySelector('.tab[data-mode="openings"]').click();
+    await sleep(100);
+    var open = win.OPENINGS[0];
+    doc.querySelector('#opening-select').value = open.id;
+    doc.querySelector('#opening-select').dispatchEvent(new win.Event('change'));
+    await sleep(300);
+    report(doc.querySelector('#opening-blurb').textContent === open.blurb, 'opening loads', open.name);
+
+    /* play the first move of the line */
+    var g = new win.Chess();
+    var first = g.moves({ verbose: true }).filter(function (m) {
+      return m.san.replace(/[+#]/g, '') === open.moves[0].replace(/[+#]/g, '');
+    })[0];
+    await playMove(win, doc, first.from, first.to);
+    await sleep(700);
+    var oStatus = doc.querySelector('#opening-status').textContent;
+    report(/Yes/.test(oStatus) || /\d+ \/ /.test(doc.querySelector('#opening-progress').textContent),
+      'opening move accepted', oStatus.slice(0, 40));
+    report(doc.querySelector('#opening-progress').textContent.indexOf('2 /') === 0,
+      'reply played automatically', doc.querySelector('#opening-progress').textContent);
+
+    /* wrong opening move */
+    var g2 = new win.Chess();
+    g2.move(open.moves[0]); g2.move(open.moves[1]);
+    var wrong = g2.moves({ verbose: true }).filter(function (m) {
+      return m.san.replace(/[+#]/g, '') !== open.moves[2].replace(/[+#]/g, '');
+    })[0];
+    await playMove(win, doc, wrong.from, wrong.to);
+    await sleep(200);
+    report(doc.querySelector('#opening-status').classList.contains('bad'), 'wrong opening move refused',
+      doc.querySelector('#opening-status').textContent.slice(0, 44));
+
+    /* -------------------------------------------------------------- stats */
+    doc.querySelector('.tab[data-mode="stats"]').click();
+    await sleep(150);
+    report(doc.querySelector('#s-attempts').textContent === '1', 'stats show the attempt',
+      doc.querySelector('#s-attempts').textContent);
+    report(doc.querySelector('#theme-list').textContent.length > 5, 'theme breakdown rendered', '');
+    report(doc.querySelector('#rating-chart').innerHTML.indexOf('path') >= 0 ||
+           doc.querySelector('#rating-chart').innerHTML.indexOf('text') >= 0, 'rating chart drawn', '');
+
+    /* -------------------------------------------------- promotion picker */
+    var picked = null;
+    ct.board.askPromotion('w', function (p) { picked = p; });
+    await sleep(60);
+    report(!doc.querySelector('.promo-overlay').classList.contains('hidden'), 'promotion picker opens', '');
+    report(doc.querySelectorAll('.promo-btn').length === 4, 'four promotion buttons',
+      doc.querySelectorAll('.promo-btn').length + '');
+    doc.querySelectorAll('.promo-btn')[3].click();
+    await sleep(60);
+    report(picked === 'n', 'picker returns the chosen piece', String(picked));
+    report(doc.querySelector('.promo-overlay').classList.contains('hidden'), 'picker closes after choosing', '');
+
+    /* --------------------------------------------------------- flip board */
+    doc.querySelector('.tab[data-mode="puzzles"]').click();
+    await sleep(100);
+    var firstSquare = doc.querySelector('#board .sq').dataset.square;
+    doc.querySelector('#flip').click();
+    await sleep(100);
+    report(doc.querySelector('#board .sq').dataset.square !== firstSquare, 'flip reorients the board',
+      firstSquare + ' → ' + doc.querySelector('#board .sq').dataset.square);
+    report(doc.querySelectorAll('#board .sq').length === 64, 'still 64 squares after flip', '');
+
+    finish();
+  }
+
+  function finish() {
+    try {
+      if (saved === null) localStorage.removeItem('chesstrainer.v2');
+      else localStorage.setItem('chesstrainer.v2', saved);
+    } catch (e) { /* ignore */ }
+    var s = document.getElementById('summary');
+    s.textContent = fail === 0 ? '✓ all ' + pass + ' UI checks passed' : '✕ ' + fail + ' failed, ' + pass + ' passed';
+    s.style.color = fail === 0 ? 'var(--good)' : 'var(--bad)';
+    console.log('UITEST', JSON.stringify({ pass: pass, fail: fail }));
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess Trainer — tactics, openings and a sparring partner</title>
+<meta name="description" content="A browser chess trainer: rated tactics puzzles, an opening repertoire drill, and an engine to play against. No accounts, no server.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♞</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">♞</span>
+    <div>
+      <h1>Chess Trainer</h1>
+      <p class="tagline">Tactics, openings, and a sparring partner — all in the browser.</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button id="flip" class="icon-btn" title="Flip the board (f)" aria-label="Flip the board">⇅</button>
+    <button id="sound" class="icon-btn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
+    <button id="reset" class="icon-btn danger" title="Reset all progress" aria-label="Reset all progress">⟲</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-mode="puzzles" role="tab">Tactics</button>
+  <button class="tab" data-mode="play" role="tab">Play the engine</button>
+  <button class="tab" data-mode="openings" role="tab">Openings</button>
+  <button class="tab" data-mode="stats" role="tab">Progress</button>
+  <div class="quickstats">
+    <span><b id="stat-rating">800</b> rating</span>
+    <span><b id="stat-solved">0</b> solved</span>
+    <span><b id="stat-streak">0</b> streak</span>
+  </div>
+</nav>
+
+<main class="layout">
+
+  <section class="board-col">
+    <div class="board-wrap">
+      <div id="eval" class="eval hidden" aria-hidden="true">
+        <div class="eval-track"><div id="eval-fill" class="eval-fill"></div></div>
+        <span id="eval-text" class="eval-text">0.0</span>
+      </div>
+      <div id="board"></div>
+    </div>
+  </section>
+
+  <section class="side">
+
+    <!-- ------------------------------------------------------------ TACTICS -->
+    <div class="panel" data-mode="puzzles">
+      <div class="panel-head">
+        <h2>Find the best move</h2>
+        <span class="meta"><b id="puzzle-id">—</b> · rated <b id="puzzle-rating">—</b></span>
+      </div>
+      <div class="controls">
+        <label>Difficulty
+          <select id="puzzle-band">
+            <option value="auto">Match my rating</option>
+            <option value="easy">Easy (under 1000)</option>
+            <option value="medium">Medium (1000–1450)</option>
+            <option value="hard">Hard (1450+)</option>
+          </select>
+        </label>
+        <span class="meta pool-count"><b id="puzzle-count">0</b> puzzles in the set</span>
+      </div>
+      <div id="puzzle-themes" class="chips"></div>
+      <p id="puzzle-status" class="status neutral">Loading…</p>
+      <p class="sub" id="puzzle-progress"></p>
+      <p id="puzzle-explain" class="explain hidden"></p>
+      <div class="btn-row">
+        <button id="puzzle-hint" class="btn">Hint</button>
+        <button id="puzzle-solution" class="btn ghost">Show solution</button>
+        <button id="puzzle-retry" class="btn ghost">Retry</button>
+        <button id="puzzle-next" class="btn primary">Next puzzle →</button>
+      </div>
+      <p class="fineprint">Puzzles are picked near your rating. Solving first time raises it; a miss or a peek at
+        the solution lowers it. Shortcuts: <kbd>n</kbd> next, <kbd>h</kbd> hint, <kbd>f</kbd> flip.</p>
+    </div>
+
+    <!-- --------------------------------------------------------------- PLAY -->
+    <div class="panel hidden" data-mode="play">
+      <div class="panel-head">
+        <h2>Play a game</h2>
+        <span class="meta">strength <b id="level-elo">~1000</b></span>
+      </div>
+      <div class="controls">
+        <label>Play as
+          <select id="play-color">
+            <option value="w">White</option>
+            <option value="b">Black</option>
+            <option value="random">Random</option>
+          </select>
+        </label>
+        <label>Level
+          <select id="play-level"></select>
+        </label>
+      </div>
+      <p id="play-status" class="status neutral">Press “New game”.</p>
+      <div id="move-list" class="move-list"><div class="empty">No moves yet.</div></div>
+      <div class="btn-row">
+        <button id="play-hint" class="btn">Hint</button>
+        <button id="play-undo" class="btn ghost">Take back</button>
+        <button id="play-new" class="btn primary">New game</button>
+      </div>
+      <p class="fineprint">The engine searches with alpha-beta pruning and a quiescence search, so it will not
+        hang pieces to a simple recapture. Lower levels deliberately pick slightly worse moves.</p>
+    </div>
+
+    <!-- ----------------------------------------------------------- OPENINGS -->
+    <div class="panel hidden" data-mode="openings">
+      <div class="panel-head">
+        <h2>Drill an opening</h2>
+        <span class="meta" id="opening-progress"></span>
+      </div>
+      <select id="opening-select" class="wide"></select>
+      <p id="opening-blurb" class="sub"></p>
+      <p id="opening-status" class="status neutral"></p>
+      <p id="opening-note" class="explain hidden"></p>
+      <div id="opening-line" class="line"></div>
+      <div class="btn-row">
+        <button id="opening-reveal" class="btn">Reveal move</button>
+        <button id="opening-restart" class="btn primary">Restart line</button>
+      </div>
+      <p class="fineprint">You play one side; the main line answers automatically. Wrong moves are taken back so
+        you never learn the mistake by muscle memory.</p>
+    </div>
+
+    <!-- -------------------------------------------------------------- STATS -->
+    <div class="panel hidden" data-mode="stats">
+      <div class="panel-head"><h2>Progress</h2></div>
+      <div class="tiles">
+        <div class="tile"><b id="s-rating">800</b><span>puzzle rating</span></div>
+        <div class="tile"><b id="s-solved">0</b><span>solved</span></div>
+        <div class="tile"><b id="s-accuracy">0%</b><span>first-try rate</span></div>
+        <div class="tile"><b id="s-best">0</b><span>best streak</span></div>
+        <div class="tile"><b id="s-attempts">0</b><span>attempts</span></div>
+        <div class="tile"><b id="s-games">0</b><span>games played</span></div>
+      </div>
+      <h3>Rating over time</h3>
+      <svg id="rating-chart" viewBox="0 0 600 130" preserveAspectRatio="none" class="chart"></svg>
+      <h3>By theme</h3>
+      <div id="theme-list" class="theme-list"></div>
+      <h3>Openings</h3>
+      <div id="opening-stats" class="theme-list"></div>
+      <h3>Games vs the engine</h3>
+      <p class="sub">Record: <b id="s-record">0W / 0D / 0L</b></p>
+      <p class="fineprint">Everything is stored in this browser only (localStorage). Nothing is uploaded anywhere.</p>
+    </div>
+
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Built from scratch — move generation, search and evaluation are all in
+    <code>js/engine.js</code> and <code>js/ai.js</code>. No libraries.</span>
+  <a href="validate.html">Run the engine self-test →</a>
+</footer>
+
+<script src="js/engine.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/openings.js"></script>
+<script src="js/board.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
