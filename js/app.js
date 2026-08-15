@@ -147,7 +147,8 @@
     leave: function () {},
 
     pick: function () {
-      var band = BANDS[$('#puzzle-band').value] || BANDS.auto;
+      var sel = $('#puzzle-band');
+      var band = (sel && BANDS[sel.value]) || BANDS.auto;
       var pool = PUZZLES.filter(function (p) {
         return p.rating >= band.min && p.rating <= band.max;
       });
