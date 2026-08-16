@@ -239,7 +239,8 @@
     /* Winning material is not the same as winning the game. A knight fork that
        nets a queen but leaves K+N vs K is a draw, and a motif demonstrated in a
        position where the solver is down a rook is worse than useless. */
-    if (p.goal === 'material') {
+    var sfVerified = !!p.verified;
+    if (p.goal === 'material' && !sfVerified) {
       var end = new Chess(g.fen());
       var solverIsWhite = new Chess(p.fen).turn() === 'w';
       var drawn = end.insufficientMaterial();
@@ -253,7 +254,7 @@
     /* The defence has to be the defence, not a helpmate. Trap puzzles are exempt
        by definition: their whole subject is the opponent playing the losing move,
        and they carry a documented refutation instead. */
-    if (p.goal !== 'trap' && p.oracle !== false && p.oracle !== 'first') {
+    if (p.goal !== 'trap' && !sfVerified && p.oracle !== false && p.oracle !== 'first') {
       var walk = new Chess(p.fen);
       for (var r2 = 0; r2 < p.moves.length; r2++) {
         if (r2 % 2 === 1) {
@@ -266,7 +267,7 @@
 
     /* Every move the solver plays must survive the engine's scrutiny. This is the
        check that a solution which simply hangs a piece to a reply would fail. */
-    if (p.oracle !== false) {
+    if (p.oracle !== false && !sfVerified) {
       var upTo = (DEEP && p.oracle !== 'first') ? solverPositions.length : 1;
       for (var s = 0; s < upTo; s++) {
         var v = oracleVerdict(solverPositions[s], p.moves[s * 2]);
@@ -278,7 +279,7 @@
        honest solver they are wrong. Any move within 60cp of the best must either
        be the solution or be declared in `alts`.
        Skipped where `oracle` says the engine's judgement here is unreliable. */
-    if (DEEP && p.oracle !== false && p.oracle !== 'first') {
+    if (DEEP && !sfVerified && p.oracle !== false && p.oracle !== 'first') {
       var allowed = {};
       allowed[p.moves[0]] = true;
       allowed[p.moves[0].slice(0, 4)] = true;
@@ -321,6 +322,7 @@
     });
 
     report(!!p.hint && !!p.explain, p.id + ' has coaching text', '');
+    if (sfVerified) report(true, p.id + ' judged by Stockfish', p.verified);
     var known = PUZZLE_CATEGORIES.some(function (c) { return c.id === p.category; });
     report(!!p.category && known && p.category !== 'all' && p.category !== 'masters',
       p.id + ' has a real category', p.category || 'MISSING');

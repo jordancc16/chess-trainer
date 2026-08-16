@@ -1,0 +1,10 @@
+# Development-only, not part of the app and not redistributed.
+# tools/README.md says how to fetch both.
+tools/vendor/
+tools/corpus/
+tools/*.log
+tools/*.err
+tools/mined.json
+tools/mined.js
+tools/smoke.json
+tools/fixes.json
