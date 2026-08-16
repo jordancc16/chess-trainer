@@ -90,7 +90,7 @@
     {
       id: 'p11', rating: 1000, themes: ['fork', 'knight fork'],
       fen: 'r3k3/5ppp/8/3N4/8/8/5PPP/6K1 w - - 0 1',
-      moves: ['d5c7', 'e8e7', 'c7a8'],
+      moves: ['d5c7', 'e8d7', 'c7a8'],
       goal: 'material',
       hint: 'One square hits both the king and the rook.',
       explain: 'Nc7+ forks king and rook. The check is forcing, so the rook on a8 cannot be saved. (A fork of king and queen is the one called a royal fork — with the rook it is just a fork.)'
@@ -188,18 +188,10 @@
     {
       id: 'p27', rating: 1250, themes: ['removing the defender', 'material'],
       fen: '6k1/6pp/5n2/3b2B1/8/8/8/3R2K1 w - - 0 1',
-      moves: ['g5f6', 'g7f6', 'd1d5'],
+      moves: ['g5f6', 'd5b3', 'd1b1'],
       goal: 'material',
       hint: 'Rxd5 fails to one recapture. So deal with the recapturer first.',
-      explain: 'Rxd5?? Nxd5 loses the exchange — the bishop is attacked once and defended once. Bxf6! trades the defender off, and after gxf6 the bishop on d5 is defended by nobody. Count attackers against defenders before you take, and if you are one short, remove a defender instead.'
-    },
-    {
-      id: 'p28', rating: 1200, themes: ['skewer'],
-      fen: '5r2/8/8/2k5/8/8/8/Q5K1 w - - 0 1',
-      moves: ['a1a3', 'c5b5', 'a3f8'],
-      goal: 'material',
-      hint: 'King and rook already share a diagonal. Get behind the king on it.',
-      explain: 'Qa3+ skewers along a3-f8. Checking from a distance matters: Qb4+ would also hit the diagonal, but the king simply takes it.'
+      explain: 'Rxd5?? Nxd5 loses the exchange — the bishop is attacked once and defended once. Bxf6! removes the defender, and now gxf6 is impossible because Rxd5 would simply take the bishop. Black has to abandon it with ...Bb3 and stay a piece down. Count attackers against defenders before you take, and if you are one short, remove a defender instead.'
     },
     {
       id: 'p29', rating: 1350, themes: ['double check', 'discovered check', 'fork'],
@@ -236,26 +228,6 @@
       refutation: 'dxe5',
       hint: 'The knight looks pinned. Ask yourself what the pin is actually worth.',
       explain: "Légal's mate, played in a Paris café around 1750 and still catching people. The knight is not really pinned: 1.Nxe5! and if Black grabs the queen with 1...Bxd1?? then 2.Bxf7+ Ke7 3.Nd5# is mate — the knight on e5 covers d7 and defends the bishop on f7. Black must decline with 1...dxe5 2.Qxg4, when White has won a pawn and the bishop pair."
-    },
-    {
-      id: 'p33', rating: 1800, themes: ['endgame', 'pawn breakthrough'],
-      fen: '8/ppp4k/8/PPP5/8/8/8/K7 w - - 0 1',
-      moves: ['b5b6', 'a7b6', 'c5c6', 'b7c6', 'a5a6', 'c6c5', 'a6a7', 'c5c4', 'a7a8q'],
-      goal: 'material',
-      /* The engine only checks the first move here: at the depth the oracle runs it
-         prefers 2.axb6, which is a known blind spot — after 2.axb6 cxb6 White has
-         nothing, while 2.c6! queens by force. Pawn endings need depth, not width. */
-      oracle: 'first',
-      hint: 'Three pawns against three, but it is your move. Give one away.',
-      explain: 'The pawn breakthrough. b6! costs a pawn and cannot be declined properly: 1...axb6 2.c6! bxc6 3.a6 and the a-pawn runs. If instead 1...cxb6 2.a6! bxa6 3.c6 does the same job on the other wing. Counting tempi beats counting pawns.'
-    },
-    {
-      id: 'p34', rating: 2100, themes: ['windmill', 'discovered check', 'sacrifice'],
-      fen: '5rk1/ppn3p1/7p/8/8/8/1B6/K5R1 w - - 0 1',
-      moves: ['g1g7', 'g8h8', 'g7c7', 'h8g8', 'c7g7', 'g8h8', 'g7b7', 'h8g8', 'b7g7'],
-      goal: 'material',
-      hint: 'The bishop on b2 is aimed at h8. What happens every time the rook steps off that diagonal?',
-      explain: 'The windmill. Rxg7+ cannot be taken because the bishop defends g7, so the king must go to h8 — and now every time the rook leaves the long diagonal it is a discovered check, so it can eat its way along the seventh rank and come back. Black can only stop it by giving up more material to block on f6.'
     },
     {
       id: 'p35', rating: 1300, themes: ['removing the defender', 'promotion'],

@@ -25,12 +25,12 @@ PIECE_VALUE = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3,
 # A puzzle needs a clear single answer, so the gap between the best move and the
 # next best has to be big; and the position must be roughly level without it,
 # otherwise "find the win" is meaningless.
-SCAN_NODES = 45000       # cheap first pass over every position
-CONFIRM_DEPTH = 18       # only for positions the first pass liked
-SCAN_STRIDE = 2          # look at every other position; tactics are dense enough
-MAX_SCANS_PER_GAME = 26  # do not burn the budget on a quiet game
-MIN_GAP = 250            # centipawns between best and second best
-MAX_WITHOUT = 60         # eval ceiling for the second best move
+SCAN_NODES = 20000       # cheap first pass over every position
+CONFIRM_DEPTH = 16       # only for positions the first pass liked
+SCAN_STRIDE = 3          # look at every other position; tactics are dense enough
+MAX_SCANS_PER_GAME = 18  # do not burn the budget on a quiet game
+MIN_GAP = 220            # centipawns between best and second best
+MAX_WITHOUT = 90         # eval ceiling for the second best move
 MIN_WITH = 200           # eval floor for the best move
 MAX_ALREADY = 250        # skip positions already this winning before the move
 
@@ -248,7 +248,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--target', type=int, default=150)
     ap.add_argument('--out', default=os.path.join(HERE, 'mined.json'))
-    ap.add_argument('--threads', type=int, default=10)
+    ap.add_argument('--threads', type=int, default=3)
+    ap.add_argument('--files', default='', help='comma-separated PGN basenames')
     ap.add_argument('--seed', type=int, default=7)
     args = ap.parse_args()
 
@@ -257,6 +258,9 @@ def main():
     engine.configure({'Threads': args.threads, 'Hash': 256})
 
     files = sorted(f for f in os.listdir(CORPUS) if f.endswith('.pgn'))
+    if args.files:
+        want = set(x.strip() + '.pgn' for x in args.files.split(','))
+        files = [f for f in files if f in want]
     print(f'corpus: {len(files)} files', flush=True)
 
     # interleave players so the set is not all one person's style

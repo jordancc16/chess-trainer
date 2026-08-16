@@ -48,6 +48,7 @@ def load_puzzles(path):
             'oracle': (re.search(r"oracle:\s*'([^']+)'", body) or [None, None])[1]
                       if re.search(r"oracle:", body) else None,
             'game': bool(re.search(r"\n\s*game:", body)),
+            'alts': re.findall(r"uci:\s*'([^']+)'", body),
         })
     return out
 
@@ -89,7 +90,11 @@ def check(engine, p, depth):
         fails.append(f"key move {p['moves'][0]} is not best (engine: {tops[0][0]}, "
                      f"{tops[0][1]} vs ours)")
     mate_in_one = p['goal'] == 'mate' and len(p['moves']) == 1
-    if len(tops) > 1 and tops[0][1] - tops[1][1] < UNIQUE_GAP and not mate_in_one:
+    # a declared alternative is not a rival; nor is anything in a trap puzzle,
+    # whose subject is the opponent's mistake rather than a unique best move
+    exempt = mate_in_one or p['goal'] == 'trap'
+    if (len(tops) > 1 and tops[0][1] - tops[1][1] < UNIQUE_GAP
+            and not exempt and tops[1][0] not in p.get('alts', [])):
         fails.append(f'not a unique solution: {tops[1][0]} is only '
                      f'{tops[0][1] - tops[1][1]}cp worse')
 
