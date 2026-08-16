@@ -232,8 +232,9 @@
       var source = $('#puzzle-game');
       source.textContent = p.game || '';
       source.classList.toggle('hidden', !p.game);
+      /* count the solver's own moves — ceil, so the last one registers on solving */
       $('#puzzle-progress').textContent =
-        Math.floor(this.step / 2) + ' / ' + Math.ceil(p.moves.length / 2) + ' moves found';
+        Math.ceil(this.step / 2) + ' / ' + Math.ceil(p.moves.length / 2) + ' moves found';
       renderStatsBar();
     },
 
@@ -450,13 +451,18 @@
     },
 
     renderEval: function () {
-      var cp = ChessAI.evaluate(this.game);
-      if (this.game.turnColor === Chess.BLACK) cp = -cp;   /* to White's point of view */
+      /* settledEval resolves the captures first — a raw material count would jump
+         a whole piece the moment one is taken and jump back on the recapture. */
+      var cp = ChessAI.settledEval(this.game);
       var pct = 50 + 50 * (2 / (1 + Math.exp(-cp / 350)) - 1);
       pct = Math.max(2, Math.min(98, pct));
       $('#eval-fill').style.height = pct + '%';
-      var pawns = (cp / 100).toFixed(1);
-      $('#eval-text').textContent = (cp > 0 ? '+' : '') + pawns;
+      if (Math.abs(cp) > ChessAI.MATE - 1000) {
+        var mateIn = Math.ceil((ChessAI.MATE - Math.abs(cp)) / 2);
+        $('#eval-text').textContent = (cp > 0 ? 'M' : '-M') + Math.max(1, mateIn);
+      } else {
+        $('#eval-text').textContent = (cp > 0 ? '+' : '') + (cp / 100).toFixed(1);
+      }
     },
 
     status: function (text, kind) {

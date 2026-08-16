@@ -186,6 +186,10 @@
     if ((this.nodes & 1023) === 0 && Date.now() > this.deadline) { this.aborted = true; return alpha; }
     this.nodes++;
 
+    /* A repeated position is a draw, so scoring it 0 makes a winning side avoid it
+       on its own — this is what stops the engine shuffling into a threefold when
+       it is a queen up. */
+    if (ply > 0 && game.isRepetition()) return 0;
     if (game.halfMoves >= 100 || game.insufficientMaterial()) return 0;
 
     var inCheck = game.inCheck();
@@ -265,19 +269,41 @@
       if (pool.length) best = pool[Math.floor(Math.random() * pool.length)].move;
     }
 
-    return { move: best, score: bestScore, nodes: this.nodes };
+    /* Opening variety: for the first few moves, take any move that is essentially
+       as good as the best. Without this the engine is deterministic and plays the
+       identical game every time. */
+    if (options.varyOpenings !== false && game.moveNumber <= 5 && scored.length > 1 &&
+        Math.abs(bestScore) < 300) {
+      var fresh = scored.filter(function (s) { return s.score >= bestScore - 35; });
+      if (fresh.length > 1) best = fresh[Math.floor(Math.random() * fresh.length)].move;
+    }
+
+    return { move: best, score: bestScore, nodes: this.nodes, scored: scored };
   };
 
   var LEVELS = [
     { name: 'Beginner',     depth: 1, time: 200,  skill: 0, elo: '~600' },
     { name: 'Casual',       depth: 2, time: 400,  skill: 1, elo: '~1000' },
-    { name: 'Club player',  depth: 3, time: 900,  skill: 2, elo: '~1400' },
-    { name: 'Strong',       depth: 5, time: 2200, skill: 3, elo: '~1800' }
+    { name: 'Club player',  depth: 4, time: 1200, skill: 2, elo: '~1500' },
+    { name: 'Strong',       depth: 7, time: 4000, skill: 3, elo: '~1900' }
   ];
+
+  /* A settled evaluation: play out the captures before reporting a number, so the
+     bar does not swing on a capture and swing back on the recapture. */
+  function settledEval(game) {
+    var e = new Engine();
+    e.deadline = Date.now() + 250;
+    e.aborted = false;
+    e.killers = [];
+    e.nodes = 0;
+    var score = e.search(game, 2, -Infinity, Infinity, 0);
+    return game.turnColor === WHITE ? score : -score;
+  }
 
   global.ChessAI = {
     Engine: Engine,
     evaluate: evaluate,
+    settledEval: settledEval,
     LEVELS: LEVELS,
     MATE: MATE,
     VALUE: VALUE

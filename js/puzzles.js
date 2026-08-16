@@ -81,7 +81,7 @@
     },
     {
       id: 'p10', rating: 1000, themes: ['fork', 'knight fork'],
-      fen: '6k1/5p1p/6p1/3q4/6N1/8/8/6K1 w - - 0 1',
+      fen: '6k1/5p1p/6p1/3q4/6N1/8/5PPP/6K1 w - - 0 1',
       moves: ['g4f6', 'g8g7', 'f6d5'],
       goal: 'material',
       hint: 'Check first, count material second.',
@@ -89,11 +89,11 @@
     },
     {
       id: 'p11', rating: 1000, themes: ['fork', 'knight fork'],
-      fen: 'r3k3/8/8/3N4/8/8/8/6K1 w - - 0 1',
+      fen: 'r3k3/5ppp/8/3N4/8/8/5PPP/6K1 w - - 0 1',
       moves: ['d5c7', 'e8e7', 'c7a8'],
       goal: 'material',
       hint: 'One square hits both the king and the rook.',
-      explain: 'Nc7+ is the classic royal fork. The check is forcing, so the rook on a8 cannot be saved.'
+      explain: 'Nc7+ forks king and rook. The check is forcing, so the rook on a8 cannot be saved. (A fork of king and queen is the one called a royal fork — with the rook it is just a fork.)'
     },
     {
       id: 'p13', rating: 1100, themes: ['discovered attack', 'discovered check'],
@@ -118,14 +118,6 @@
       goal: 'material',
       hint: 'The king and rook share a rank. Attack the one in front.',
       explain: 'Ra8+ forces the king off the eighth rank and Rxh8 wins the rook — a skewer along the rank.'
-    },
-    {
-      id: 'p16', rating: 900, themes: ['fork', 'pawn fork'],
-      fen: '4k3/8/2n1b3/8/2PP4/8/8/4K3 w - - 0 1',
-      moves: ['d4d5', 'c6b4', 'd5e6'],
-      goal: 'material',
-      hint: 'The humblest piece can attack two at once.',
-      explain: 'd5 forks knight and bishop, and the c4 pawn defends it. Whichever piece runs, the other one drops.'
     },
     {
       id: 'p17', rating: 1300, themes: ['deflection', 'back rank', 'mate in 2'],
@@ -160,14 +152,6 @@
       explain: 'Qb8# — no black piece can reach the eighth rank and the pawns block every flight square.'
     },
     {
-      id: 'p21', rating: 1200, themes: ['pin', 'material'],
-      fen: '3rkr2/3p1p2/5b2/4n3/8/3P4/8/4R1K1 w - - 0 1',
-      moves: ['d3d4', 'd7d6', 'd4e5'],
-      goal: 'material',
-      hint: 'Attack the piece that is not allowed to move — with something cheaper than it.',
-      explain: 'The knight is pinned to the king by the rook on e1. Rxe5 is no good, the bishop just recaptures; d4! attacks the pinned knight with a pawn instead, and a piece that cannot move cannot run away. Black can add defenders all day and still loses a knight for a pawn.'
-    },
-    {
       id: 'p22', rating: 800, themes: ['mate in 1', 'back rank'],
       fen: '2r3k1/5ppp/8/8/8/8/5PPP/2R3K1 w - - 0 1',
       moves: ['c1c8'],
@@ -187,7 +171,7 @@
     /* ---------------------------------------------------------- intermediate */
     {
       id: 'p25', rating: 1050, themes: ['fork', 'knight fork'],
-      fen: '4k3/8/8/5N2/2q5/8/8/6K1 w - - 0 1',
+      fen: '4k3/5ppp/8/5N2/2q5/8/5PPP/6K1 w - - 0 1',
       moves: ['f5d6', 'e8e7', 'd6c4'],
       goal: 'material',
       hint: 'One square touches both the king and the queen.',
@@ -377,14 +361,6 @@
       goal: 'material',
       hint: 'Both black rooks are on the same rank. Find the square that touches both.',
       explain: 'Nd6! forks c8 and e8, and neither rook defends the fork square. Black can only save one — White wins the exchange. Rooks left on the same rank or file are a standing invitation to a knight.'
-    },
-    {
-      id: 'p47', rating: 1200, category: 'pins', themes: ['skewer'],
-      fen: '7q/6k1/8/8/8/8/5B2/6K1 w - - 0 1',
-      moves: ['f2d4', 'g7g8', 'd4h8'],
-      goal: 'material',
-      hint: 'King and queen are on the same diagonal, with the king in front.',
-      explain: 'Bd4+ skewers king and queen. The king has to step off the long diagonal and the queen falls. Blocking with the queen on e5 or f6 loses her just as surely — the bishop simply takes.'
     },
     {
       id: 'p48', rating: 1500, category: 'deflection', themes: ['decoy', 'sacrifice', 'knight fork'],

@@ -42,6 +42,19 @@
 
   var DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+  /* Zobrist keys, so the search can spot a repetition without building a FEN at
+     every node. Piece placement and side to move only — that is all repetition
+     detection inside a search needs. */
+  var ZOBRIST = new Array(32);
+  (function () {
+    function rand32() { return (Math.random() * 0x100000000) >>> 0; }
+    for (var p = 0; p < 32; p++) {
+      ZOBRIST[p] = new Array(128);
+      for (var s = 0; s < 128; s++) ZOBRIST[p][s] = rand32();
+    }
+  })();
+  var ZOBRIST_SIDE = (Math.random() * 0x100000000) >>> 0;
+
   function Chess(fen) {
     this.board = new Array(128);
     this.kings = {};
@@ -92,7 +105,29 @@
     this.halfMoves = parts[4] ? parseInt(parts[4], 10) : 0;
     this.moveNumber = parts[5] ? parseInt(parts[5], 10) : 1;
     this.positions = [this.positionKey()];
+    this.hash = this.computeHash();
+    this.hashList = [this.hash];
     return this;
+  };
+
+  Chess.prototype.computeHash = function () {
+    var h = 0;
+    for (var sq = 0; sq <= 119; sq++) {
+      if (sq & 0x88) { sq += 7; continue; }
+      var p = this.board[sq];
+      if (p) h = (h ^ ZOBRIST[p][sq]) >>> 0;
+    }
+    if (this.turnColor === BLACK) h = (h ^ ZOBRIST_SIDE) >>> 0;
+    return h;
+  };
+
+  /* Has the position on the board right now occurred earlier in this line? */
+  Chess.prototype.isRepetition = function () {
+    var n = 0;
+    for (var i = this.hashList.length - 2; i >= 0; i--) {
+      if (this.hashList[i] === this.hash) { n++; if (n >= 1) return true; }
+    }
+    return false;
   };
 
   Chess.prototype.put = function (piece, sq) {
@@ -367,29 +402,44 @@
       halfMoves: this.halfMoves,
       moveNumber: this.moveNumber,
       kingW: this.kings[WHITE],
-      kingB: this.kings[BLACK]
+      kingB: this.kings[BLACK],
+      hash: this.hash
     });
+
+    var h = this.hash;
+    h = (h ^ ZOBRIST[move.piece][move.from]) >>> 0;      /* piece leaves */
 
     b[move.to] = b[move.from];
     b[move.from] = EMPTY;
 
     if (move.flags & FLAG_EP) {
-      b[move.to + (us === WHITE ? -16 : 16)] = EMPTY;
+      var epSq = move.to + (us === WHITE ? -16 : 16);
+      h = (h ^ ZOBRIST[move.captured][epSq]) >>> 0;
+      b[epSq] = EMPTY;
+    } else if (move.captured) {
+      h = (h ^ ZOBRIST[move.captured][move.to]) >>> 0;
     }
     if (move.flags & FLAG_PROMO) {
       b[move.to] = move.promotion | us;
+      h = (h ^ ZOBRIST[move.promotion | us][move.to]) >>> 0;
+    } else {
+      h = (h ^ ZOBRIST[move.piece][move.to]) >>> 0;
     }
     if ((move.piece & TYPE_MASK) === KING) {
       this.kings[us] = move.to;
       if (move.flags & FLAG_KSIDE) {
         b[move.to - 1] = b[move.to + 1];
         b[move.to + 1] = EMPTY;
+        h = (h ^ ZOBRIST[ROOK | us][move.to + 1] ^ ZOBRIST[ROOK | us][move.to - 1]) >>> 0;
       } else if (move.flags & FLAG_QSIDE) {
         b[move.to + 1] = b[move.to - 2];
         b[move.to - 2] = EMPTY;
+        h = (h ^ ZOBRIST[ROOK | us][move.to - 2] ^ ZOBRIST[ROOK | us][move.to + 1]) >>> 0;
       }
       this.castling &= ~(us === WHITE ? (C_WK | C_WQ) : (C_BK | C_BQ));
     }
+    this.hash = (h ^ ZOBRIST_SIDE) >>> 0;
+    this.hashList.push(this.hash);
     if (CASTLE_CLEAR[move.from]) this.castling &= ~CASTLE_CLEAR[move.from];
     if (CASTLE_CLEAR[move.to]) this.castling &= ~CASTLE_CLEAR[move.to];
 
@@ -416,6 +466,8 @@
     this.kings[WHITE] = prev.kingW;
     this.kings[BLACK] = prev.kingB;
     this.turnColor = us;
+    this.hash = prev.hash;
+    this.hashList.pop();
 
     b[move.from] = move.piece;
     b[move.to] = EMPTY;
