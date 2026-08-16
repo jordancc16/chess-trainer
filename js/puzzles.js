@@ -309,8 +309,191 @@
       goal: 'mate',
       hint: 'You are Black. White has just blocked the check — look at what that bishop can no longer do.',
       explain: 'Nf3# — the trap Blackburne is said to have used to win shillings from amateurs. Bxf3 is the natural answer and it is illegal: the bishop on e2 is pinned to the king by the queen on e4. White\'s own pieces cover every escape square, so the lone knight mates.'
+    },
+
+    /* ------------------------------------------------------- more mates --- */
+    {
+      id: 'p39', rating: 420, category: 'mating', themes: ['mate in 1', 'back rank'],
+      fen: '6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1',
+      moves: ['e1e8'],
+      goal: 'mate',
+      hint: 'The three pawns in front of the king never moved.',
+      explain: 'Re8# — the simplest pattern in chess and the one that decides the most games. A castled king with all three pawns still home has no escape from the eighth rank.'
+    },
+    {
+      id: 'p40', rating: 450, category: 'mating', themes: ['mate in 1', 'queen mate'],
+      fen: '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1',
+      moves: ['b1b8'],
+      goal: 'mate',
+      hint: 'Your king already holds g7 and h7. Take the last rank.',
+      explain: 'Qb8# — with the kings in opposition the queen only has to cover the eighth rank. Learn this before the rook version: it is the same idea with one fewer piece to place.'
+    },
+    {
+      id: 'p41', rating: 850, category: 'mating', themes: ['mate in 1', 'smothered mate'],
+      fen: '6rk/6pp/3N4/8/8/8/8/6K1 w - - 0 1',
+      moves: ['d6f7'],
+      goal: 'mate',
+      hint: 'Black has three pieces around the king and every one of them is in the way.',
+      explain: 'Nf7# — a smothered mate. The rook takes g8, the pawns take g7 and h7, and a knight cannot be blocked, so one piece finishes the game.'
+    },
+    {
+      id: 'p42', rating: 1000, category: 'mating', themes: ['mate in 1', 'battery'],
+      fen: '5rk1/5pp1/8/7Q/8/3B4/8/6K1 w - - 0 1',
+      moves: ['h5h7'],
+      goal: 'mate',
+      hint: 'h7 is empty and the bishop on d3 is looking straight at it.',
+      explain: 'Qh7# — the queen lands on the square the bishop defends, so the king cannot take, and Black\'s own rook seals f8. Queen and bishop aiming at h7 is the most common attacking battery in chess.'
+    },
+    {
+      id: 'p43', rating: 1050, category: 'mating', themes: ['mate in 1', 'Damiano mate'],
+      fen: 'r6k/p2Q4/6P1/8/8/8/8/6K1 w - - 0 1',
+      moves: ['d7h7'],
+      goal: 'mate',
+      hint: 'The pawn on g6 is not just a pawn, it is a defender.',
+      explain: "Damiano's mate: Qh7# is protected by the g6 pawn, so the king cannot capture, and the queen covers g7 and g8 herself. A pawn on g6 is worth a piece in this pattern."
+    },
+    {
+      id: 'p44', rating: 1100, category: 'mating', themes: ['mate in 1', 'two bishops'],
+      fen: '7k/7p/6p1/8/2B2B2/8/8/6K1 w - - 0 1',
+      moves: ['f4e5'],
+      goal: 'mate',
+      hint: 'One bishop already covers g8. Put the other on the long diagonal.',
+      explain: 'Be5# — two bishops on crossing diagonals mate a cornered king without any help. The c4 bishop takes g8, the e5 bishop takes g7 and gives the check, and Black\'s own h7 pawn does the rest.'
+    },
+    {
+      id: 'p45', rating: 1150, category: 'mating', themes: ['mate in 1', 'queen and knight'],
+      fen: '6k1/5p1p/8/7N/3Q4/8/8/6K1 w - - 0 1',
+      moves: ['d4g7'],
+      goal: 'mate',
+      hint: 'The knight on h5 is defending a square you would like to occupy.',
+      explain: 'Qg7# — the knight defends the queen, so Kxg7 is illegal, and the queen covers f8 and h8 herself. Queen and knight are the deadliest pair of attackers precisely because the knight guards squares the queen cannot.'
+    },
+
+    /* ------------------------------------------------- more tactics -------- */
+    {
+      id: 'p46', rating: 1250, category: 'forks', themes: ['fork', 'knight fork', 'the exchange'],
+      fen: 'n1r1r1k1/5ppp/8/5N2/8/8/5PPP/R4RK1 w - - 0 1',
+      moves: ['f5d6', 'c8d8', 'd6e8'],
+      goal: 'material',
+      hint: 'Both black rooks are on the same rank. Find the square that touches both.',
+      explain: 'Nd6! forks c8 and e8, and neither rook defends the fork square. Black can only save one — White wins the exchange. Rooks left on the same rank or file are a standing invitation to a knight.'
+    },
+    {
+      id: 'p47', rating: 1200, category: 'pins', themes: ['skewer'],
+      fen: '7q/6k1/8/8/8/8/5B2/6K1 w - - 0 1',
+      moves: ['f2d4', 'g7g8', 'd4h8'],
+      goal: 'material',
+      hint: 'King and queen are on the same diagonal, with the king in front.',
+      explain: 'Bd4+ skewers king and queen. The king has to step off the long diagonal and the queen falls. Blocking with the queen on e5 or f6 loses her just as surely — the bishop simply takes.'
+    },
+    {
+      id: 'p48', rating: 1500, category: 'deflection', themes: ['decoy', 'sacrifice', 'knight fork'],
+      fen: '4kn2/4p3/7q/4N3/8/8/5PPP/3R2K1 w - - 0 1',
+      moves: ['d1d8', 'e8d8', 'e5f7', 'd8e8', 'f7h6'],
+      goal: 'material',
+      hint: 'The king is not standing on a fork square. Put him on one.',
+      explain: 'Rd8+!! is a decoy. Count Black\'s escape squares first: the knight on e5 covers d7 and f7, and Black\'s own knight and pawn block f8 and e7 — so Kxd8 is the only legal move and the sacrifice cannot be declined. Now Nf7+ forks king and queen. A decoy does not remove a defender, it relocates a target.'
+    },
+    {
+      id: 'p50', rating: 1150, category: 'endgame', themes: ['promotion', 'fork'],
+      fen: '7k/P7/8/3r4/8/8/8/6K1 w - - 0 1',
+      moves: ['a7a8q', 'd5d8', 'a8d8'],
+      goal: 'material',
+      hint: 'Promote, but look at which square the new queen will control.',
+      explain: 'a8=Q+ is check along the eighth rank and hits the rook on d5 down the long diagonal at the same time. Blocking on d8 only loses the rook a move later. Always check what a new queen attacks before choosing the promotion square.'
+    },
+
+    /* --------------------------------------------------- opening traps ----- */
+    {
+      id: 'p51', rating: 1300, category: 'traps', themes: ['opening trap', 'mate in 1', 'smothered mate', 'pin'],
+      game: 'Caro-Kann Defence, 4...Nd7 5.Qe2 Ngf6??',
+      fen: 'r1bqkb1r/pp1npppp/2p2n2/8/3PN3/8/PPP1QPPP/R1B1KBNR w KQkq - 4 6',
+      moves: ['e4d6'],
+      goal: 'mate',
+      hint: 'Why did White put the queen on e2 rather than develop a piece?',
+      explain: 'Nd6# — the point of 5.Qe2. Every escape square is taken by one of Black\'s own pieces, and exd6 is illegal because the e7 pawn is pinned to the king by the queen on e2. This exact mate has been played thousands of times in the Caro-Kann.'
+    },
+    {
+      id: 'p52', rating: 1350, category: 'traps', themes: ['opening trap', 'discovered check', 'material'],
+      game: "Petrov's Defence, 3...Nxe4?? 4.Qe2 Nf6??",
+      fen: 'rnbqkb1r/pppp1ppp/5n2/4N3/8/8/PPPPQPPP/RNB1KB1R w KQkq - 4 5',
+      moves: ['e5c6', 'f8e7', 'c6d8'],
+      goal: 'material',
+      hint: 'The queen on e2 and the black king are on the same file. What is standing between them?',
+      explain: 'Nc6+! is a discovered check from the queen, and the knight lands attacking the queen on d8. Black must deal with the check first, so the queen is lost. This is why 4...Nf6 loses on the spot and 4...Qe7 is the only move.'
+    },
+    {
+      id: 'p53', rating: 1450, category: 'traps', themes: ['opening trap', 'material'],
+      game: "Queen's Gambit Declined, the Elephant Trap",
+      fen: 'r1bqkb1r/pppn1ppp/5n2/3N2B1/3P4/8/PP2PPPP/R2QKBNR b KQkq - 0 6',
+      moves: ['f6d5', 'g5d8', 'f8b4', 'd1d2', 'b4d2', 'e1d2', 'e8d8'],
+      goal: 'material',
+      hint: 'You are Black. White just grabbed a pawn on d5 — the knight looks pinned, but is it?',
+      explain: 'The Elephant Trap. 6...Nxd5! looks impossible because of the pin on the d8 queen, but after 7.Bxd8 Bb4+! White has to give the queen back: 8.Qd2 Bxd2+ 9.Kxd2 Kxd8 and Black has simply won a piece. An intermezzo check is the standard way to break out of a pin.'
+    },
+    {
+      id: 'p54', rating: 1600, category: 'traps', themes: ['opening trap', 'underpromotion', 'material'],
+      game: 'Albin Counter-Gambit, the Lasker Trap',
+      fen: 'rnbqk1nr/ppp2ppp/8/4P3/1BP5/8/PP2KpPP/RN1Q1BNR b kq - 1 7',
+      moves: ['f2g1n', 'h1g1', 'c8g4', 'e2e1', 'g4d1'],
+      goal: 'material',
+      /* Only the underpromotion is machine-checked. After 8...Bg4+ White has half a
+         dozen king moves and 9.Ke1 is just the natural one, so the oracle rightly
+         ranks Black's later moves against defences that were never played. */
+      oracle: 'first',
+      hint: 'You are Black, with a pawn on f2. A new queen is not the strongest piece here.',
+      explain: 'The Lasker Trap, and the only opening line where an underpromotion appears by move seven. fxg1=N+! is check — a new queen on g1 would not be — so White must spend a move on Rxg1, and then Bg4+ drives the king off e2 and the queen on d1 falls.'
+    },
+    {
+      id: 'p55', rating: 1500, category: 'traps', themes: ['opening trap', 'mate in 2'],
+      game: 'Englund Gambit, 7.Qd2??',
+      fen: 'r1b1k1nr/pppp1ppp/2n5/4P3/1b6/2B2N2/PqPQPPPP/RN2KB1R b KQkq - 6 7',
+      moves: ['b4c3', 'd2c3', 'b2c1'],
+      goal: 'trap',
+      refutation: 'recapturing with the knight, 8.Nxc3',
+      hint: 'You are Black. Trade on c3 and look at the square the white queen leaves behind.',
+      explain: 'Bxc3! and if White recaptures naturally with 8.Qxc3?? then 8...Qc1# is mate — the queen on c1 covers d1 and d2, the a1 rook is blocked by its own knight and the white queen is blocked by its own c2 pawn. White has to recapture with the knight instead.'
     }
   ];
 
+  /* `game` is a credit line — it covers both real games and named opening theory.
+     `masters` is narrower: an actual game between named players. Keeping them
+     separate stops "Master games" from quietly meaning "has a caption". */
+  ['p32', 'p36', 'p37'].forEach(function (id) {
+    PUZZLES.forEach(function (p) { if (p.id === id) p.masters = true; });
+  });
+
+  /* Categories are the top-level way to browse the set; `themes` stay as free-form
+     tags. Master games are not a category — they cut across them. */
+  var CATEGORIES = [
+    { id: 'all', label: 'All categories' },
+    { id: 'mating', label: 'Mating patterns' },
+    { id: 'forks', label: 'Forks & double attacks' },
+    { id: 'pins', label: 'Pins & skewers' },
+    { id: 'discovered', label: 'Discovered attacks' },
+    { id: 'deflection', label: 'Deflection & decoys' },
+    { id: 'sacrifice', label: 'Sacrifices' },
+    { id: 'endgame', label: 'Endgames' },
+    { id: 'traps', label: 'Opening traps' },
+    { id: 'masters', label: 'Master games' }
+  ];
+
+  /* Categories for the puzzles written before the field existed. */
+  var LEGACY_CATEGORY = {
+    p01: 'mating', p02: 'mating', p03: 'traps', p04: 'mating', p05: 'mating',
+    p06: 'mating', p07: 'mating', p08: 'mating', p09: 'mating', p10: 'forks',
+    p11: 'forks', p13: 'discovered', p14: 'pins', p15: 'pins', p16: 'forks',
+    p17: 'deflection', p18: 'sacrifice', p19: 'endgame', p20: 'mating',
+    p21: 'pins', p22: 'mating', p23: 'discovered', p25: 'forks', p26: 'mating',
+    p27: 'deflection', p28: 'pins', p29: 'discovered', p30: 'sacrifice',
+    p31: 'sacrifice', p32: 'traps', p33: 'endgame', p34: 'sacrifice',
+    p35: 'endgame', p36: 'sacrifice', p37: 'sacrifice', p38: 'traps'
+  };
+
+  PUZZLES.forEach(function (p) {
+    if (!p.category) p.category = LEGACY_CATEGORY[p.id];
+  });
+
   global.PUZZLES = PUZZLES;
+  global.PUZZLE_CATEGORIES = CATEGORIES;
 })(window);

@@ -27,6 +27,8 @@
 
 <nav class="tabs" role="tablist">
   <button class="tab active" data-mode="puzzles" role="tab">Tactics</button>
+  <button class="tab" data-mode="rush" role="tab">Puzzle Rush</button>
+  <button class="tab" data-mode="vision" role="tab">Vision</button>
   <button class="tab" data-mode="play" role="tab">Play the engine</button>
   <button class="tab" data-mode="openings" role="tab">Openings</button>
   <button class="tab" data-mode="stats" role="tab">Progress</button>
@@ -58,6 +60,9 @@
         <span class="meta"><b id="puzzle-id">—</b> · rated <b id="puzzle-rating">—</b></span>
       </div>
       <div class="controls">
+        <label>Category
+          <select id="puzzle-category"></select>
+        </label>
         <label>Difficulty
           <select id="puzzle-band">
             <option value="auto">Match my rating</option>
@@ -81,6 +86,58 @@
       </div>
       <p class="fineprint">Puzzles are picked near your rating. Solving first time raises it; a miss or a peek at
         the solution lowers it. Shortcuts: <kbd>n</kbd> next, <kbd>h</kbd> hint, <kbd>f</kbd> flip.</p>
+    </div>
+
+    <!-- --------------------------------------------------------- PUZZLE RUSH -->
+    <div class="panel hidden" data-mode="rush">
+      <div class="panel-head">
+        <h2>Puzzle Rush</h2>
+        <span class="meta">best <b id="rush-best">0</b></span>
+      </div>
+      <div class="scoreboard">
+        <div class="score-cell"><b id="rush-timer">3:00</b><span>left</span></div>
+        <div class="score-cell"><b id="rush-solved">0</b><span>solved</span></div>
+        <div class="score-cell"><b id="rush-strikes" class="strikes"></b><span>strikes</span></div>
+      </div>
+      <p id="rush-status" class="status neutral">Three minutes, three strikes.</p>
+      <p id="rush-result" class="explain hidden"></p>
+      <div class="btn-row">
+        <button id="rush-start" class="btn primary">Start a run</button>
+      </div>
+      <p class="fineprint">Puzzles come at you easiest first and get harder as you go. A wrong
+        move costs a strike and moves you on — there is no second try. Three strikes or three
+        minutes, whichever comes first.</p>
+    </div>
+
+    <!-- ------------------------------------------------------------- VISION -->
+    <div class="panel hidden" data-mode="vision">
+      <div class="panel-head">
+        <h2>Board Vision</h2>
+        <span class="meta">best <b id="vision-best">0</b></span>
+      </div>
+      <div class="controls">
+        <label>Play as
+          <select id="vision-side">
+            <option value="w">White</option>
+            <option value="b">Black</option>
+            <option value="random">Random</option>
+          </select>
+        </label>
+      </div>
+      <div class="scoreboard">
+        <div class="score-cell"><b id="vision-timer">0:30</b><span>left</span></div>
+        <div class="score-cell"><b id="vision-target" class="target">—</b><span>find this</span></div>
+        <div class="score-cell"><b id="vision-score">0</b><span>found</span></div>
+      </div>
+      <p id="vision-status" class="status neutral">Find the square before the clock runs out.</p>
+      <p id="vision-result" class="explain hidden"></p>
+      <div class="btn-row">
+        <button id="vision-start" class="btn primary">Start</button>
+      </div>
+      <p class="fineprint">Thirty seconds to click as many named squares as you can, with the
+        coordinates hidden. Knowing where g6 is without counting is the single cheapest way to
+        speed up your calculation. Try it from Black's side too — that is the half most players
+        never practise.</p>
     </div>
 
     <!-- --------------------------------------------------------------- PLAY -->
@@ -141,9 +198,13 @@
         <div class="tile"><b id="s-best">0</b><span>best streak</span></div>
         <div class="tile"><b id="s-attempts">0</b><span>attempts</span></div>
         <div class="tile"><b id="s-games">0</b><span>games played</span></div>
+        <div class="tile"><b id="s-rush">0</b><span>rush best</span></div>
+        <div class="tile"><b id="s-vision">0</b><span>vision best</span></div>
       </div>
       <h3>Rating over time</h3>
       <svg id="rating-chart" viewBox="0 0 600 130" preserveAspectRatio="none" class="chart"></svg>
+      <h3>By category</h3>
+      <div id="category-list" class="theme-list"></div>
       <h3>By theme</h3>
       <div id="theme-list" class="theme-list"></div>
       <h3>Openings</h3>

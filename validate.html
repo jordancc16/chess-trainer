@@ -143,6 +143,23 @@
     });
   }
 
+  /* Score a specific short list of moves, deeper. Used to re-check anything the
+     cheap full-width pass flagged, so a combination the shallow search cannot see
+     is not mistaken for "several moves are equally good". */
+  function scoreMoves(fen, ucis, depth) {
+    return ucis.map(function (uci) {
+      var g = new Chess(fen);
+      if (!g.move(uci)) return { uci: uci, score: -Infinity, mate: false };
+      if (g.isCheckmate()) return { uci: uci, score: ChessAI.MATE, mate: true };
+      var e = new ChessAI.Engine();
+      e.deadline = Date.now() + 60000;
+      e.aborted = false;
+      e.killers = [];
+      e.nodes = 0;
+      return { uci: uci, score: -e.search(g, depth - 1, -Infinity, Infinity, 1), mate: false };
+    });
+  }
+
   /* Does the engine agree this is the move? Catches solutions that simply hang. */
   function oracleVerdict(fen, uci) {
     var g = new Chess(fen);
@@ -155,6 +172,8 @@
     /* not the top choice — is it at least as good? */
     var g2 = new Chess(fen);
     if (!g2.move(uci)) return { ok: false, detail: 'illegal' };
+    /* A move that ends the game cannot be searched, and nothing beats mate. */
+    if (g2.isCheckmate()) return { ok: true, detail: uci + ' is mate' };
     var e2 = new ChessAI.Engine();
     var reply = e2.think(g2, { depth: 4, time: 1200, skill: 3 });
     var ourScore = reply ? -reply.score : 0;
@@ -249,6 +268,13 @@
         if (mateInOne && s.mate) return false;   /* any mate is accepted by the trainer */
         return s.score >= top - tolerance;
       });
+      /* Anything flagged gets a deeper second opinion against the solution. */
+      if (rivals.length) {
+        var deep = scoreMoves(p.fen, [p.moves[0]].concat(rivals.map(function (r) { return r.uci; })), 6);
+        var solScore = deep[0].score;
+        var deepTol = solScore > ChessAI.MATE - 1000 ? 0 : 60;
+        rivals = deep.slice(1).filter(function (s) { return s.score >= solScore - deepTol; });
+      }
       report(rivals.length === 0, p.id + ' has one solution',
         rivals.length ? 'also playable: ' + rivals.map(function (r) {
           return r.uci + ' (' + r.score + ')';
@@ -267,7 +293,26 @@
     });
 
     report(!!p.hint && !!p.explain, p.id + ' has coaching text', '');
+    var known = PUZZLE_CATEGORIES.some(function (c) { return c.id === p.category; });
+    report(!!p.category && known && p.category !== 'all' && p.category !== 'masters',
+      p.id + ' has a real category', p.category || 'MISSING');
   });
+
+  section('Categories');
+  PUZZLE_CATEGORIES.filter(function (c) { return c.id !== 'all' && c.id !== 'masters'; })
+    .forEach(function (c) {
+      var n = PUZZLES.filter(function (p) { return p.category === c.id; }).length;
+      report(n >= 2, c.label + ' has puzzles', n + '');
+    });
+  report(PUZZLES.filter(function (p) { return p.masters; }).length >= 3, 'master games present',
+    PUZZLES.filter(function (p) { return p.masters; }).length + ' games, ' +
+    PUZZLES.filter(function (p) { return p.game; }).length + ' credited positions');
+  report(PUZZLES.every(function (p) { return !p.masters || !!p.game; }),
+    'every master game carries its credit', '');
+  /* Puzzle Rush walks the set from easiest upward, so the shallow end has to be stocked. */
+  report(PUZZLES.filter(function (p) { return p.rating < 900; }).length >= 6,
+    'enough easy puzzles for a rush run',
+    PUZZLES.filter(function (p) { return p.rating < 900; }).length + ' under 900');
 
   function material(g) {
     var v = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, total = 0;

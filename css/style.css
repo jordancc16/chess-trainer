@@ -168,6 +168,23 @@ h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
 }
 @keyframes fade { from { opacity: 1; } to { opacity: 0; } }
 
+/* the vision trainer hides the edge labels — they would give the answer away */
+.board.vision .coord { display: none; }
+.board.vision .sq { cursor: pointer; }
+
+/* minigame scoreboards */
+.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.score-cell {
+  background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 8px; text-align: center;
+}
+.score-cell b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.score-cell span { font-size: 11px; color: var(--muted); }
+.score-cell .target { font-size: 26px; letter-spacing: .04em; color: var(--accent); }
+.strikes { display: flex; justify-content: center; gap: 6px; font-size: 20px; }
+.strike { color: var(--muted); }
+.strike.used { color: var(--bad); }
+
 /* promotion picker */
 .promo-overlay {
   position: absolute; inset: 0; background: rgba(8, 11, 18, .72);

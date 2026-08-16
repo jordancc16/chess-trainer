@@ -20,6 +20,8 @@
     themes: {},        /* theme -> { solved: n, failed: n } */
     games: { played: 0, won: 0, lost: 0, drawn: 0 },
     openings: {},      /* openingId -> { completed: n, best: ply } */
+    rush: { best: 0, runs: 0, totalSolved: 0 },
+    vision: { best: 0, runs: 0 },
     sound: true
   };
 
@@ -149,9 +151,22 @@
     pick: function () {
       var sel = $('#puzzle-band');
       var band = (sel && BANDS[sel.value]) || BANDS.auto;
+      var catSel = $('#puzzle-category');
+      var cat = catSel ? catSel.value : 'all';
       var pool = PUZZLES.filter(function (p) {
-        return p.rating >= band.min && p.rating <= band.max;
+        if (p.rating < band.min || p.rating > band.max) return false;
+        if (cat === 'all') return true;
+        if (cat === "masters") return !!p.masters;      /* a cross-cut, not a category */
+        return p.category === cat;
       });
+      /* a category can be empty inside a narrow rating band — widen rather than fail */
+      if (!pool.length) {
+        pool = PUZZLES.filter(function (p) {
+          if (cat === 'all') return true;
+          if (cat === "masters") return !!p.masters;
+          return p.category === cat;
+        });
+      }
       if (!pool.length) pool = PUZZLES.slice();
       var rating = band.anchor === null ? store.rating : band.anchor;
       pool.sort(function (a, b) {
@@ -683,6 +698,329 @@
   };
   Mode.all.openings = Openings;
 
+  /* =========================================================== PUZZLE RUSH == */
+
+  var Rush = {
+    game: null, puzzle: null, step: 0, locked: false, running: false,
+    queue: [], index: 0, solved: 0, strikes: 0, endsAt: 0, timer: null,
+
+    enter: function () {
+      if (!this.running) this.showIdle();
+      else this.draw();
+    },
+    leave: function () { this.stop(false); },
+
+    showIdle: function () {
+      $('#rush-timer').textContent = formatClock(RUSH_SECONDS);
+      $('#rush-solved').textContent = '0';
+      this.renderStrikes();
+      this.status('Three minutes, three strikes. Puzzles get harder as you go.', 'neutral');
+      board.interactive = false;
+      if (this.game) board.render(this.game, { skipAnimation: true });
+    },
+
+    /* Easiest first, so a run ramps up the way a rush should. */
+    buildQueue: function () {
+      var pool = PUZZLES.slice().sort(function (a, b) { return a.rating - b.rating; });
+      /* shuffle within equal-ish rating bands so runs are not identical */
+      var out = [], band = [];
+      function flush() {
+        for (var i = band.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = band[i]; band[i] = band[j]; band[j] = t;
+        }
+        out = out.concat(band);
+        band = [];
+      }
+      var bandStart = pool.length ? pool[0].rating : 0;
+      pool.forEach(function (p) {
+        if (p.rating - bandStart > 150) { flush(); bandStart = p.rating; }
+        band.push(p);
+      });
+      flush();
+      return out;
+    },
+
+    start: function () {
+      this.queue = this.buildQueue();
+      this.index = 0;
+      this.solved = 0;
+      this.strikes = 0;
+      this.running = true;
+      this.endsAt = Date.now() + RUSH_SECONDS * 1000;
+      $('#rush-start').textContent = 'Give up';
+      $('#rush-result').classList.add('hidden');
+      var self = this;
+      this.timer = setInterval(function () { self.tick(); }, 200);
+      this.loadNext();
+    },
+
+    tick: function () {
+      var left = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
+      $('#rush-timer').textContent = formatClock(left);
+      if (left <= 0) this.stop(true);
+    },
+
+    loadNext: function () {
+      if (this.index >= this.queue.length) return this.stop(true);
+      this.puzzle = this.queue[this.index++];
+      this.game = new Chess(this.puzzle.fen);
+      this.step = 0;
+      this.locked = false;
+      board.setOrientation(this.game.turn());
+      board.interactive = true;
+      this.draw({ skipAnimation: true });
+      this.status((this.game.turn() === 'w' ? 'White' : 'Black') + ' to play — rated ' +
+        this.puzzle.rating + '.', 'neutral');
+    },
+
+    draw: function (opts) {
+      opts = opts || {};
+      var last = this.game && this.game.history().slice(-1)[0];
+      if (this.game) {
+        board.render(this.game, {
+          lastMove: last ? { from: Chess.algebraic(last.from), to: Chess.algebraic(last.to) } : null,
+          check: checkSquare(this.game),
+          skipAnimation: opts.skipAnimation
+        });
+      }
+      $('#rush-solved').textContent = this.solved;
+      this.renderStrikes();
+    },
+
+    renderStrikes: function () {
+      var host = $('#rush-strikes');
+      host.innerHTML = '';
+      for (var i = 0; i < 3; i++) {
+        var dot = document.createElement('span');
+        dot.className = 'strike' + (i < this.strikes ? ' used' : '');
+        dot.textContent = i < this.strikes ? '✕' : '·';
+        host.appendChild(dot);
+      }
+    },
+
+    status: function (text, kind) {
+      var n = $('#rush-status');
+      n.textContent = text;
+      n.className = 'status ' + (kind || 'neutral');
+    },
+
+    select: function (sq) {
+      if (!this.running || this.locked) return false;
+      return selectPiece(this.game, sq, this.game.turn());
+    },
+
+    tryMove: function (from, to) {
+      if (!this.running || this.locked) return false;
+      var self = this;
+      return commitMove(this.game, from, to, function (move) {
+        if (!move) return;
+        self.judge(move);
+      });
+    },
+
+    judge: function (move) {
+      var expected = this.puzzle.moves[this.step];
+      var isLast = this.step === this.puzzle.moves.length - 1;
+      var mateNow = isLast && this.puzzle.goal === 'mate' && this.game.isCheckmate();
+      var altHit = this.step === 0 && (this.puzzle.alts || []).some(function (a) {
+        return a.uci === move.uci;
+      });
+      var correct = move.uci === expected || mateNow || altHit;
+
+      if (!correct) {
+        this.game.undo();
+        Sound.bad();
+        this.strikes++;
+        board.render(this.game, { check: checkSquare(this.game), skipAnimation: true });
+        board.flash(Chess.algebraic(move.to), 'bad');
+        this.draw();
+        if (this.strikes >= 3) return this.stop(true);
+        this.status('Missed — ' + move.san + '. ' + (3 - this.strikes) + ' left.', 'bad');
+        var self = this;
+        this.locked = true;
+        setTimeout(function () { self.loadNext(); }, 700);
+        return;
+      }
+
+      playMoveSound(this.game, move);
+      if (altHit) { this.step = this.puzzle.moves.length; }
+      else this.step++;
+      this.draw();
+      if (this.step >= this.puzzle.moves.length) return this.scored();
+
+      var self2 = this;
+      this.locked = true;
+      setTimeout(function () {
+        var reply = self2.game.move(self2.puzzle.moves[self2.step]);
+        if (reply) { playMoveSound(self2.game, reply); self2.step++; self2.draw(); }
+        self2.locked = false;
+        if (self2.step >= self2.puzzle.moves.length) self2.scored();
+      }, 260);
+    },
+
+    scored: function () {
+      this.solved++;
+      Sound.good();
+      this.draw();
+      this.status('Solved. Next.', 'good');
+      var self = this;
+      this.locked = true;
+      setTimeout(function () { if (self.running) self.loadNext(); }, 400);
+    },
+
+    stop: function (showResult) {
+      if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      if (!this.running) return;
+      this.running = false;
+      this.locked = true;
+      board.interactive = false;
+      $('#rush-start').textContent = 'Start a run';
+      if (!showResult) return;
+
+      var best = store.rush.best || 0;
+      var isBest = this.solved > best;
+      if (isBest) store.rush.best = this.solved;
+      store.rush.runs++;
+      store.rush.totalSolved += this.solved;
+      save();
+      Sound.win();
+      $('#rush-result').classList.remove('hidden');
+      $('#rush-result').textContent = this.strikes >= 3
+        ? 'Three strikes — ' + this.solved + ' solved.' + (isBest ? ' New best!' : ' Best is ' + Math.max(best, this.solved) + '.')
+        : 'Time — ' + this.solved + ' solved.' + (isBest ? ' New best!' : ' Best is ' + Math.max(best, this.solved) + '.');
+      $('#rush-best').textContent = store.rush.best;
+      this.status('Run over.', 'neutral');
+      renderStats();
+    }
+  };
+  Mode.all.rush = Rush;
+
+  var RUSH_SECONDS = 180;
+  function formatClock(s) {
+    var m = Math.floor(s / 60);
+    return m + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  /* ================================================================ VISION == */
+
+  var FILES = 'abcdefgh';
+  var Vision = {
+    running: false, target: null, hits: 0, misses: 0, endsAt: 0, timer: null,
+    orientation: 'w', empty: null,
+
+    enter: function () {
+      if (!this.empty) this.empty = new Chess('8/8/8/8/8/8/8/8 w - - 0 1');
+      board.interactive = false;
+      boardEl.classList.add('vision');
+      if (!this.running) this.showIdle();
+    },
+    leave: function () {
+      boardEl.classList.remove('vision');
+      this.stop(false);
+    },
+
+    showIdle: function () {
+      $('#vision-timer').textContent = formatClock(VISION_SECONDS);
+      $('#vision-score').textContent = '0';
+      $('#vision-target').textContent = '—';
+      this.status('Find the square before the clock runs out. Coordinates are hidden.', 'neutral');
+      board.setOrientation(this.orientation);
+      board.render(this.empty, { skipAnimation: true });
+    },
+
+    start: function () {
+      this.running = true;
+      this.hits = 0;
+      this.misses = 0;
+      this.endsAt = Date.now() + VISION_SECONDS * 1000;
+      this.orientation = $('#vision-side').value === 'random'
+        ? (Math.random() < 0.5 ? 'w' : 'b')
+        : $('#vision-side').value;
+      board.setOrientation(this.orientation);
+      board.render(this.empty, { skipAnimation: true });
+      board.interactive = true;
+      $('#vision-start').textContent = 'Stop';
+      $('#vision-result').classList.add('hidden');
+      var self = this;
+      this.timer = setInterval(function () { self.tick(); }, 200);
+      this.nextTarget();
+    },
+
+    tick: function () {
+      var left = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
+      $('#vision-timer').textContent = formatClock(left);
+      if (left <= 0) this.stop(true);
+    },
+
+    nextTarget: function () {
+      var prev = this.target;
+      do {
+        this.target = FILES.charAt(Math.floor(Math.random() * 8)) +
+          (1 + Math.floor(Math.random() * 8));
+      } while (this.target === prev);
+      $('#vision-target').textContent = this.target;
+      this.status('Playing as ' + (this.orientation === 'w' ? 'White' : 'Black') +
+        '. Click ' + this.target + '.', 'neutral');
+    },
+
+    status: function (text, kind) {
+      var n = $('#vision-status');
+      n.textContent = text;
+      n.className = 'status ' + (kind || 'neutral');
+    },
+
+    /* Vision uses raw square clicks rather than piece selection. */
+    select: function (square) {
+      if (!this.running) return false;
+      this.answer(square);
+      return false;
+    },
+    tryMove: function () { return false; },
+
+    answer: function (square) {
+      if (square === this.target) {
+        this.hits++;
+        Sound.good();
+        board.flash(square, 'good');
+        $('#vision-score').textContent = this.hits;
+        this.nextTarget();
+      } else {
+        this.misses++;
+        Sound.bad();
+        board.flash(square, 'bad');
+        this.status('That was ' + square + '. Looking for ' + this.target + '.', 'bad');
+      }
+    },
+
+    stop: function (showResult) {
+      if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      if (!this.running) return;
+      this.running = false;
+      board.interactive = false;
+      $('#vision-start').textContent = 'Start';
+      $('#vision-target').textContent = '—';
+      if (!showResult) return;
+      var best = store.vision.best || 0;
+      var isBest = this.hits > best;
+      if (isBest) store.vision.best = this.hits;
+      store.vision.runs++;
+      save();
+      Sound.win();
+      var total = this.hits + this.misses;
+      var acc = total ? Math.round(100 * this.hits / total) : 0;
+      $('#vision-result').classList.remove('hidden');
+      $('#vision-result').textContent = this.hits + ' squares in ' + VISION_SECONDS +
+        ' seconds, ' + acc + '% accurate.' + (isBest ? ' New best!' : ' Best is ' + Math.max(best, this.hits) + '.');
+      $('#vision-best').textContent = store.vision.best;
+      this.status('Round over.', 'neutral');
+      renderStats();
+    }
+  };
+  Mode.all.vision = Vision;
+
+  var VISION_SECONDS = 30;
+
   /* ================================================================ STATS == */
 
   var Stats = {
@@ -709,6 +1047,28 @@
     $('#s-accuracy').textContent = acc + '%';
     $('#s-games').textContent = store.games.played;
     $('#s-record').textContent = store.games.won + 'W / ' + store.games.drawn + 'D / ' + store.games.lost + 'L';
+    $('#s-rush').textContent = store.rush.best;
+    $('#s-vision').textContent = store.vision.best;
+    $('#rush-best').textContent = store.rush.best;
+    $('#vision-best').textContent = store.vision.best;
+
+    /* by category */
+    var catHost = $('#category-list');
+    var catRows = PUZZLE_CATEGORIES.filter(function (c) { return c.id !== 'all'; }).map(function (c) {
+      var inCat = PUZZLES.filter(function (p) {
+        return c.id === "masters" ? !!p.masters : p.category === c.id;
+      });
+      var done = inCat.filter(function (p) {
+        return store.seen[p.id] && store.seen[p.id].solved > 0;
+      }).length;
+      return { label: c.label, done: done, total: inCat.length };
+    });
+    catHost.innerHTML = catRows.map(function (r) {
+      var pct = r.total ? Math.round(100 * r.done / r.total) : 0;
+      return '<div class="theme-row"><span class="theme-name">' + r.label + '</span>' +
+        '<span class="bar"><span class="bar-fill" style="width:' + pct + '%"></span></span>' +
+        '<span class="theme-num">' + r.done + '/' + r.total + '</span></div>';
+    }).join('');
 
     /* rating sparkline */
     var pts = store.history.slice(-60);
@@ -769,7 +1129,24 @@
     tab.addEventListener('click', function () { switchMode(tab.dataset.mode); });
   });
 
+  PUZZLE_CATEGORIES.forEach(function (c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    var n = c.id === 'all' ? PUZZLES.length
+      : c.id === "masters" ? PUZZLES.filter(function (p) { return p.masters; }).length
+      : PUZZLES.filter(function (p) { return p.category === c.id; }).length;
+    opt.textContent = c.label + ' (' + n + ')';
+    $('#puzzle-category').appendChild(opt);
+  });
+  $('#puzzle-category').addEventListener('change', function () { Puzzles.next(); });
   $('#puzzle-band').addEventListener('change', function () { Puzzles.next(); });
+
+  $('#rush-start').addEventListener('click', function () {
+    if (Rush.running) Rush.stop(true); else Rush.start();
+  });
+  $('#vision-start').addEventListener('click', function () {
+    if (Vision.running) Vision.stop(true); else Vision.start();
+  });
   $('#puzzle-next').addEventListener('click', function () { Puzzles.next(); });
   $('#puzzle-retry').addEventListener('click', function () { Puzzles.retry(); });
   $('#puzzle-hint').addEventListener('click', function () { Puzzles.hint(); });

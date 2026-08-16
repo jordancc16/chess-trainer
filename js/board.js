@@ -200,9 +200,11 @@
     }
     if (this.selected === square) { this.clearSelection(); return; }
 
+    /* onSelect runs even for empty squares — the vision trainer works on bare
+       squares, and piece modes reject them anyway by returning false. */
     var piece = this.squares[square].querySelector('.piece');
-    if (!piece) { this.clearSelection(); return; }
     if (this.onSelect && this.onSelect(square) === false) { this.clearSelection(); return; }
+    if (!piece) { this.clearSelection(); return; }
 
     /* start a drag */
     var rect = piece.getBoundingClientRect();

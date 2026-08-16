@@ -204,6 +204,115 @@
     await sleep(200);
     report(sourceEl.classList.contains('hidden'), 'credit hidden for composed puzzles', '');
 
+    /* ---------------------------------------------------------- categories */
+    var catSel = doc.querySelector('#puzzle-category');
+    report(catSel.options.length === win.PUZZLE_CATEGORIES.length, 'category list built',
+      catSel.options.length + ' options');
+    doc.querySelector('#puzzle-band').value = 'auto';
+    catSel.value = 'endgame';
+    catSel.dispatchEvent(new win.Event('change'));
+    await sleep(200);
+    var endId = doc.querySelector('#puzzle-id').textContent.toLowerCase();
+    var endP = win.PUZZLES.filter(function (p) { return p.id === endId; })[0];
+    report(endP && endP.category === 'endgame', 'category filter serves that category',
+      endId + ' is ' + (endP ? endP.category : '?'));
+    catSel.value = 'masters';
+    catSel.dispatchEvent(new win.Event('change'));
+    await sleep(200);
+    var mId = doc.querySelector('#puzzle-id').textContent.toLowerCase();
+    var mP = win.PUZZLES.filter(function (p) { return p.id === mId; })[0];
+    report(mP && mP.masters && mP.game, 'masters filter serves a real game',
+      mId + ' — ' + (mP && mP.game ? mP.game.slice(0, 30) : '?'));
+    catSel.value = 'all';
+    catSel.dispatchEvent(new win.Event('change'));
+    await sleep(150);
+
+    /* -------------------------------------------------------- puzzle rush */
+    doc.querySelector('.tab[data-mode="rush"]').click();
+    await sleep(150);
+    report(!doc.querySelector('.panel[data-mode="rush"]').classList.contains('hidden'),
+      'rush tab opens', '');
+    var rush = win.ChessTrainer.modes.all.rush;
+    var q = rush.buildQueue();
+    report(q.length === win.PUZZLES.length, 'rush queue holds the whole set', q.length + '');
+    report(q[0].rating <= q[q.length - 1].rating, 'rush queue ramps up',
+      q[0].rating + ' → ' + q[q.length - 1].rating);
+
+    doc.querySelector('#rush-start').click();
+    await sleep(300);
+    report(rush.running, 'run starts', '');
+    report(doc.querySelector('#rush-strikes').children.length === 3, 'three strikes shown', '');
+
+    /* solve the current puzzle through the board */
+    var rp = rush.puzzle;
+    for (var k = 0; k < rp.moves.length; k += 2) {
+      var u = rp.moves[k];
+      await playMove(win, doc, u.slice(0, 2), u.slice(2, 4), u.charAt(4));
+      await sleep(420);
+    }
+    report(rush.solved === 1, 'solving scores a point', 'solved=' + rush.solved);
+    report(rush.puzzle !== rp, 'next puzzle loaded automatically', '');
+
+    /* now miss one deliberately */
+    var rp2 = rush.puzzle;
+    var wrongMoves = new win.Chess(rp2.fen).moves({ verbose: true })
+      .filter(function (m) { return m.uci !== rp2.moves[0]; });
+    var strikesBefore = rush.strikes;
+    await playMove(win, doc, wrongMoves[0].from, wrongMoves[0].to);
+    await sleep(300);
+    report(rush.strikes === strikesBefore + 1, 'a miss costs a strike', 'strikes=' + rush.strikes);
+    report(doc.querySelector('#rush-strikes .strike.used'), 'strike is shown', '');
+
+    rush.stop(true);
+    await sleep(200);
+    report(!rush.running, 'run stops', '');
+    report(!doc.querySelector('#rush-result').classList.contains('hidden'), 'result shown',
+      doc.querySelector('#rush-result').textContent.slice(0, 40));
+    report(win.JSON.parse(win.localStorage.getItem('chesstrainer.v2')).rush.best === 1,
+      'rush best is saved', '');
+
+    /* ------------------------------------------------------------- vision */
+    doc.querySelector('.tab[data-mode="vision"]').click();
+    await sleep(150);
+    var vision = win.ChessTrainer.modes.all.vision;
+    report(doc.querySelector('#board').classList.contains('vision'), 'vision board mode on', '');
+    var coord = doc.querySelector('#board .coord');
+    report(coord && win.getComputedStyle(coord).display === 'none', 'coordinates hidden', '');
+    report(doc.querySelectorAll('#board .board-grid .piece').length === 0, 'board is empty',
+      doc.querySelectorAll('#board .board-grid .piece').length + ' pieces');
+
+    doc.querySelector('#vision-side').value = 'w';
+    doc.querySelector('#vision-start').click();
+    await sleep(300);
+    report(vision.running, 'vision round starts', '');
+    var t1 = vision.target;
+    report(/^[a-h][1-8]$/.test(t1), 'a target square is set', t1);
+
+    /* click the right square, then a wrong one */
+    var pt = point(doc, t1);
+    fire(win, pt.el, 'pointerdown', pt.x, pt.y);
+    fire(win, win, 'pointerup', pt.x, pt.y);
+    await sleep(150);
+    report(vision.hits === 1, 'correct square scores', 'hits=' + vision.hits);
+    report(vision.target !== t1, 'a new target follows', vision.target);
+
+    var wrongSq = vision.target === 'a1' ? 'h8' : 'a1';
+    var wp = point(doc, wrongSq);
+    fire(win, wp.el, 'pointerdown', wp.x, wp.y);
+    fire(win, win, 'pointerup', wp.x, wp.y);
+    await sleep(150);
+    report(vision.misses === 1, 'wrong square counts as a miss', 'misses=' + vision.misses);
+
+    vision.stop(true);
+    await sleep(200);
+    report(!vision.running && !doc.querySelector('#vision-result').classList.contains('hidden'),
+      'vision result shown', doc.querySelector('#vision-result').textContent.slice(0, 40));
+
+    doc.querySelector('.tab[data-mode="puzzles"]').click();
+    await sleep(150);
+    report(!doc.querySelector('#board').classList.contains('vision'),
+      'leaving vision restores the board', '');
+
     /* --------------------------------------------------------------- play */
     doc.querySelector('.tab[data-mode="play"]').click();
     await sleep(100);

@@ -3,13 +3,18 @@
 A browser chess trainer with three modes, written from scratch — no chess library, no engine
 binary, no build step, no server. Open `index.html` and it runs.
 
-- **Tactics** — 36 rated puzzles from 400 to 2100, with an Elo-style rating that moves with
-  you. Solve first time and it goes up; miss it or peek at the solution and it goes down.
-  Each puzzle has a hint, a full solution replay, and an explanation of the pattern. Four
-  are positions from real games — the Opera Game, the Immortal Game, Légal's mate and the
-  Blackburne Shilling trap — and are credited on screen. The rest of the hard end covers
-  Boden's mate, Anastasia's mate, a windmill and a pawn breakthrough. A difficulty selector
-  lets you jump straight to a band instead of waiting for your rating to get there.
+- **Tactics** — 52 rated puzzles from 420 to 2100, sorted into nine categories (mating
+  patterns, forks, pins & skewers, discovered attacks, deflection & decoys, sacrifices,
+  endgames, opening traps, master games) with an Elo-style rating that moves with you.
+  Solve first time and it goes up; miss it or peek and it goes down. Every puzzle has a
+  hint, a solution replay, and an explanation. Nine carry a credit line: three real master
+  games (the Opera Game, the Immortal Game, Légal's mate) and six named opening traps
+  (Elephant, Lasker, Englund, Blackburne Shilling, and mates from the Caro-Kann and
+  Petrov). Category and difficulty selectors let you drill exactly what you want.
+- **Puzzle Rush** — three minutes, three strikes, puzzles easiest-first and getting harder.
+  A wrong move costs a strike and moves you straight on.
+- **Board Vision** — thirty seconds to click as many named squares as you can with the
+  coordinates hidden, from either side of the board.
 - **Play the engine** — four strength levels, either colour, take-backs, hints and a live
   evaluation bar.
 - **Openings** — ten main lines to drill. You play one side, the line answers back, wrong
@@ -99,10 +104,13 @@ what the engine is missing.
 
 ## The search
 
-`js/ai.js` is negamax with alpha-beta pruning, iterative deepening to a time budget, MVV-LVA
-capture ordering, killer moves, a check extension, and a quiescence search so the engine does
-not stop counting in the middle of a trade. Evaluation is material plus piece-square tables,
-with separate king tables for the middlegame and the endgame.
+The engine is written from scratch here — there is no Stockfish, no library and no binary,
+and nothing is fetched at runtime. `js/ai.js` is negamax with alpha-beta pruning, iterative
+deepening to a time budget, MVV-LVA capture ordering, killer moves, a check extension, and a
+quiescence search so the engine does not stop counting in the middle of a trade. Evaluation
+is material plus piece-square tables, with separate king tables for the middlegame and the
+endgame. The algorithms are textbook; the only values not invented here are the piece-square
+tables, which are the standard published "simplified evaluation" set.
 
 The lower difficulty levels are not a shallower search pretending to be a weaker player —
 they search shallowly *and* pick randomly among moves within a slack window of the best one,
@@ -117,7 +125,7 @@ Append to `js/puzzles.js`:
 
 ```js
 {
-  id: 'p36', rating: 1100, themes: ['fork'],
+  id: 'p56', rating: 1100, category: 'forks', themes: ['fork'],
   fen: '...',
   moves: ['g4f6', 'g8g7', 'f6d5'],   // UCI; even indices are yours, odd are the replies
   goal: 'mate',                      // 'mate' | 'material' | 'trap'
@@ -126,6 +134,7 @@ Append to `js/puzzles.js`:
 
   // optional
   game: 'Morphy — Duke of Brunswick, Paris 1858',       // credited on screen
+  masters: true,                                        // a real game, not just named theory
   alts: [{ uci: 'c1e3', note: 'why this also wins' }],  // second solutions the trainer accepts
   refutation: 'dxe5',                // required for goal: 'trap' — Black's better defence
   oracle: 'first'                    // engine-check only move 1, with a comment saying why
