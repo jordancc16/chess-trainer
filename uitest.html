@@ -183,6 +183,27 @@
     report(doc.querySelector('#puzzle-count').textContent === String(win.PUZZLES.length),
       'puzzle count is shown', doc.querySelector('#puzzle-count').textContent);
 
+    /* game attribution shows for master-game puzzles and hides for composed ones */
+    var withGame = win.PUZZLES.filter(function (p) { return p.game; });
+    report(withGame.length >= 3, 'set includes master games', withGame.length + ' attributed');
+    var sourceEl = doc.querySelector('#puzzle-game');
+    var shown = !sourceEl.classList.contains('hidden');
+    report(shown === !!easy.game, 'attribution matches the loaded puzzle',
+      easyId + (easy.game ? ' has a source' : ' is composed') + ', shown=' + shown);
+
+    /* force a master-game puzzle and check the credit line renders */
+    var puzzleMode = win.ChessTrainer.modes.all.puzzles;
+    puzzleMode.puzzle = withGame[0];
+    puzzleMode.start();
+    await sleep(200);
+    report(!sourceEl.classList.contains('hidden') && sourceEl.textContent === withGame[0].game,
+      'master game credit is displayed', sourceEl.textContent.slice(0, 52));
+    /* and it disappears again on a composed puzzle */
+    puzzleMode.puzzle = win.PUZZLES.filter(function (p) { return !p.game; })[0];
+    puzzleMode.start();
+    await sleep(200);
+    report(sourceEl.classList.contains('hidden'), 'credit hidden for composed puzzles', '');
+
     /* --------------------------------------------------------------- play */
     doc.querySelector('.tab[data-mode="play"]').click();
     await sleep(100);

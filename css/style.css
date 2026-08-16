@@ -225,6 +225,10 @@ h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
 .status.neutral { border-left-color: var(--accent); }
 
 .sub { color: var(--muted); font-size: 13px; margin: 4px 0; }
+.source {
+  color: var(--muted); font-size: 12.5px; font-style: italic;
+  margin: 0 0 10px; padding-left: 10px; border-left: 2px solid var(--accent-dim);
+}
 .explain {
   background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 12px; font-size: 13.5px; color: var(--text); margin: 10px 0;

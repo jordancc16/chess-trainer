@@ -34,6 +34,7 @@
       id: 'p04', rating: 700, themes: ['ladder mate', 'rook mate'],
       fen: '8/7k/R7/8/8/8/8/1R5K w - - 0 1',
       moves: ['b1b7', 'h7h8', 'a6a8'],
+      alts: [{ uci: 'b1g1', note: 'Rg1 is the same technique turned ninety degrees — 1.Rg1 Kh8 2.Rh6#. Either rook can do the cutting as long as the other does the checking.' }],
       goal: 'mate',
       hint: 'One rook already fences off the sixth rank. Use the other one to push.',
       explain: 'The ladder (or "lawnmower") mate: Rb7+ drives the king to the last rank because Ra6 covers the retreat, and then Ra8# finishes. Two rooks mate on their own — the king is not needed.'
@@ -48,8 +49,8 @@
     },
     {
       id: 'p06', rating: 1000, themes: ['mate in 1', 'Arabian mate'],
-      fen: '7k/8/5N2/8/8/8/8/6KR w - - 0 1',
-      moves: ['h1h7'],
+      fen: '7k/R7/5N2/8/8/8/8/6K1 w - - 0 1',
+      moves: ['a7h7'],
       goal: 'mate',
       hint: 'The knight already guards g8 — and it can guard one more square.',
       explain: 'Arabian mate: Rh7# is defended by the knight on f6, which also covers g8. Rook and knight are a lethal pair on the edge.'
@@ -64,8 +65,8 @@
     },
     {
       id: 'p08', rating: 1100, themes: ['mate in 1', 'epaulette mate'],
-      fen: '3rkr2/8/8/8/8/8/8/4Q1K1 w - - 0 1',
-      moves: ['e1e6'],
+      fen: '3rkr2/8/8/8/8/8/Q7/6K1 w - - 0 1',
+      moves: ['a2e6'],
       goal: 'mate',
       hint: 'Do not go too close — the king would just take you.',
       explain: 'Epaulette mate: the rooks on d8 and f8 are "shoulder pads" that trap their own king, so Qe6# needs no protection at all.'
@@ -93,15 +94,6 @@
       goal: 'material',
       hint: 'One square hits both the king and the rook.',
       explain: 'Nc7+ is the classic royal fork. The check is forcing, so the rook on a8 cannot be saved.'
-    },
-    {
-      id: 'p12', rating: 900, themes: ['double attack', 'queen fork'],
-      fen: '4k3/8/8/8/8/7n/8/2Q1K3 w - - 0 1',
-      moves: ['c1c8', 'e8e7', 'c8h3'],
-      alts: [{ uci: 'c1e3', note: 'Qe3 also works — it covers g1, f2, f4 and g5, so the knight has nowhere to go. The fork is faster, but a net is just as good.' }],
-      goal: 'material',
-      hint: 'Find a square on the same rank as the king and the same diagonal as the knight.',
-      explain: 'Qc8+ attacks the king along the eighth rank and the loose knight along the long diagonal, and Qxh3 wins a piece. Note that the fork square has to be one the target cannot cover — a bishop on h3 would simply have taken the queen on c8.'
     },
     {
       id: 'p13', rating: 1100, themes: ['discovered attack', 'discovered check'],
@@ -153,11 +145,11 @@
     },
     {
       id: 'p19', rating: 1600, themes: ['underpromotion', 'fork'],
-      fen: '3r4/1kP2q2/8/8/8/8/8/6K1 w - - 0 1',
+      fen: '3r4/1kP2qpp/8/8/8/8/6PP/6K1 w - - 0 1',
       moves: ['c7d8n', 'b7a6', 'd8f7'],
       goal: 'material',
       hint: 'A new queen only wins a rook. Something smaller wins more.',
-      explain: 'cxd8=N+! takes the rook and forks king and queen. Promoting to a queen would win far less.'
+      explain: 'cxd8=N+! takes the rook and forks king and queen. cxd8=Q wins the rook too, but it is not check, so Black keeps the queen and the game stays level — the whole point of the underpromotion is the fork.'
     },
     {
       id: 'p20', rating: 600, themes: ['mate in 1', 'queen mate'],
@@ -190,14 +182,6 @@
       goal: 'material',
       hint: 'Move the knight and the bishop wakes up. Now put the knight somewhere useful.',
       explain: 'Ne6+ is a discovered check from the b2 bishop, and the knight lands attacking the queen. Black must answer the check, so Nxc7 is unstoppable.'
-    },
-    {
-      id: 'p24', rating: 1400, themes: ['mate in 2', 'sacrifice'],
-      fen: '6rk/6pp/8/8/8/8/1B6/4R1QK w - - 0 1',
-      moves: ['g1g7', 'g8g7', 'e1e8'],
-      goal: 'mate',
-      hint: 'The rook on g8 is holding the back rank. Force it to leave — the bishop is watching g7.',
-      explain: 'Qxg7+!! The king cannot capture because the b2 bishop defends g7, so Rxg7 is forced — and now that rook is pinned to its own king and cannot come back. Re8# ends it.'
     },
 
     /* ---------------------------------------------------------- intermediate */
@@ -260,13 +244,14 @@
       explain: "Anastasia's mate. Ne7+ forces the king into the corner, Qxh7+!! drags it onto the open file — the king must take, every other square is covered — and Rh1# finishes, with the knight holding g8 and g6 and Black's own pawn holding g7."
     },
     {
-      id: 'p32', rating: 1700, themes: ['opening trap', 'sacrifice', 'mate in 3'],
+      id: 'p32', rating: 1700, themes: ['master game', 'opening trap', 'sacrifice', 'mate in 3'],
+      game: "Légal de Kermeur — Saint Brie, Paris c.1750 (Légal's mate)",
       fen: 'rn1qkbnr/ppp2p1p/3p2p1/4p3/2B1P1b1/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 5',
       moves: ['f3e5', 'g4d1', 'c4f7', 'e8e7', 'c3d5'],
       goal: 'trap',
       refutation: 'dxe5',
       hint: 'The knight looks pinned. Ask yourself what the pin is actually worth.',
-      explain: "Legall's mate, from 1858 and still catching people. The knight is not really pinned: 1.Nxe5! and if Black grabs the queen with 1...Bxd1?? then 2.Bxf7+ Ke7 3.Nd5# is mate — the knight on e5 covers d7 and defends the bishop on f7. Black must decline with 1...dxe5 2.Qxg4, when White has won a pawn and the bishop pair."
+      explain: "Légal's mate, played in a Paris café around 1750 and still catching people. The knight is not really pinned: 1.Nxe5! and if Black grabs the queen with 1...Bxd1?? then 2.Bxf7+ Ke7 3.Nd5# is mate — the knight on e5 covers d7 and defends the bishop on f7. Black must decline with 1...dxe5 2.Qxg4, when White has won a pawn and the bishop pair."
     },
     {
       id: 'p33', rating: 1800, themes: ['endgame', 'pawn breakthrough'],
@@ -295,6 +280,35 @@
       goal: 'material',
       hint: 'Pushing the pawn now just loses it. Ask what is stopping it.',
       explain: 'a8=Q?? Nxa8 throws the pawn away — the knight covers the queening square. Rxb6! removes the only guard and nothing stops the pawn. When a passed pawn is blocked, attack the blocker rather than the pawn\'s path.'
+    },
+
+    /* ---------------------------------------------------------- master games */
+    {
+      id: 'p36', rating: 1650, themes: ['master game', 'sacrifice', 'back rank', 'mate in 2'],
+      game: 'Morphy — Duke of Brunswick & Count Isouard, Paris 1858 (the Opera Game)',
+      fen: '4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16',
+      moves: ['b3b8', 'd7b8', 'd1d8'],
+      goal: 'mate',
+      hint: 'Only one black piece is holding the back rank together. It is not the king.',
+      explain: 'The finish of the most famous game ever played, at the Paris opera during a performance of The Barber of Seville. Qb8+!! is the whole point: the knight on d7 is the only defender of d8, so it is forced to capture and abandon the square. Rd8# follows, with the g5 bishop covering e7 and defending the rook.'
+    },
+    {
+      id: 'p37', rating: 1850, themes: ['master game', 'sacrifice', 'mate in 2'],
+      game: 'Anderssen — Kieseritzky, London 1851 (the Immortal Game)',
+      fen: 'r1bk2nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1 w - - 1 22',
+      moves: ['f3f6', 'g8f6', 'd6e7'],
+      goal: 'mate',
+      hint: 'You are a queen and two rooks down. Stop counting material and count escape squares.',
+      explain: 'The Immortal Game. Anderssen has given up both rooks and now gives the queen as well: Qf6+!! and after Nxf6, Be7# is mate — the bishop is defended by the knight on d5, which also covers c7, while the knight on g7 covers e8. Every one of Black\'s extra pieces is a spectator.'
+    },
+    {
+      id: 'p38', rating: 1400, themes: ['opening trap', 'mate in 1', 'pin'],
+      game: 'The Blackburne Shilling Gambit trap',
+      fen: 'r1b1kbnr/pppp1Npp/8/8/3nq3/8/PPPPBP1P/RNBQKR2 b Qkq - 1 7',
+      moves: ['d4f3'],
+      goal: 'mate',
+      hint: 'You are Black. White has just blocked the check — look at what that bishop can no longer do.',
+      explain: 'Nf3# — the trap Blackburne is said to have used to win shillings from amateurs. Bxf3 is the natural answer and it is illegal: the bishop on e2 is pinned to the king by the queen on e4. White\'s own pieces cover every escape square, so the lone knight mates.'
     }
   ];
 

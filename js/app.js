@@ -214,6 +214,9 @@
         chip.textContent = t;
         $('#puzzle-themes').appendChild(chip);
       });
+      var source = $('#puzzle-game');
+      source.textContent = p.game || '';
+      source.classList.toggle('hidden', !p.game);
       $('#puzzle-progress').textContent =
         Math.floor(this.step / 2) + ' / ' + Math.ceil(p.moves.length / 2) + ' moves found';
       renderStatsBar();

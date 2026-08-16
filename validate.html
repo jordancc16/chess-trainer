@@ -98,6 +98,51 @@
     return true;
   }
 
+  /* A position can be perfectly parseable and still be unreachable in a real game.
+     The commonest way to get this wrong when composing: the side NOT to move is
+     already in check, which means the previous move was illegal. */
+  function legalityProblems(g) {
+    var problems = [];
+    var them = g.turnColor === Chess.WHITE ? Chess.BLACK : Chess.WHITE;
+    if (g.kingAttacked(them)) {
+      problems.push('the side not to move is already in check');
+    }
+    var kings = { w: 0, b: 0 }, pawnsOnBackRank = 0;
+    var grid = g.grid();
+    for (var r = 0; r < 8; r++) {
+      for (var f = 0; f < 8; f++) {
+        var c = grid[r][f];
+        if (!c.type) continue;
+        if (c.type === 'k') kings[c.color]++;
+        if (c.type === 'p' && (r === 0 || r === 7)) pawnsOnBackRank++;
+      }
+    }
+    if (kings.w !== 1) problems.push('white has ' + kings.w + ' kings');
+    if (kings.b !== 1) problems.push('black has ' + kings.b + ' kings');
+    if (pawnsOnBackRank) problems.push(pawnsOnBackRank + ' pawn(s) on the first or eighth rank');
+    return problems;
+  }
+
+  /* Score every root move with a full window. The engine's own root scores are
+     alpha-beta bounds, not values, so they cannot be compared against each other. */
+  function rootScores(fen, depth) {
+    var g = new Chess(fen);
+    var e = new ChessAI.Engine();
+    e.deadline = Date.now() + 60000;
+    e.aborted = false;
+    e.killers = [];
+    e.nodes = 0;
+    return g.generateMoves().map(function (m) {
+      var uci = Chess.algebraic(m.from) + Chess.algebraic(m.to) +
+        ((m.flags & Chess.FLAG_PROMO) ? Chess.SYMBOLS[m.promotion] : '');
+      g.makeMove(m);
+      var mate = g.isCheckmate();
+      var score = mate ? ChessAI.MATE : -e.search(g, depth - 1, -Infinity, Infinity, 1);
+      g.undoMove();
+      return { uci: uci, score: score, mate: mate };
+    });
+  }
+
   /* Does the engine agree this is the move? Catches solutions that simply hang. */
   function oracleVerdict(fen, uci) {
     var g = new Chess(fen);
@@ -131,6 +176,8 @@
     try { g = new Chess(p.fen); }
     catch (e) { report(false, p.id + ' fen', e.message); return; }
 
+    var problems = legalityProblems(g);
+    report(problems.length === 0, p.id + ' start is a legal position', problems.join('; '));
     if (g.inCheck()) report(false, p.id + ' start', 'side to move already in check');
     if (p.moves.length % 2 === 0 && (p.goal === 'mate' || p.goal === 'trap')) {
       report(false, p.id + ' shape', 'a mating line must end on the solver\'s move');
@@ -178,6 +225,34 @@
         var v = oracleVerdict(solverPositions[s], p.moves[s * 2]);
         report(v.ok, p.id + ' move ' + (s + 1) + ' survives the engine', v.detail);
       }
+    }
+
+    /* A puzzle with two equally good first moves is a puzzle that will tell an
+       honest solver they are wrong. Any move within 60cp of the best must either
+       be the solution or be declared in `alts`.
+       Skipped where `oracle` says the engine's judgement here is unreliable. */
+    if (DEEP && p.oracle !== false && p.oracle !== 'first') {
+      var allowed = {};
+      allowed[p.moves[0]] = true;
+      allowed[p.moves[0].slice(0, 4)] = true;
+      (p.alts || []).forEach(function (a) { allowed[a.uci] = true; });
+
+      var scores = rootScores(p.fen, 4);
+      var top = Math.max.apply(null, scores.map(function (s) { return s.score; }));
+      var mateInOne = p.goal === 'mate' && p.moves.length === 1;
+      /* Mate scores encode distance-to-mate, so they sit a few points apart and a
+         centipawn tolerance would call a mate in 4 a rival of a mate in 1. When the
+         best move mates, only an equally fast mate counts as a second solution. */
+      var tolerance = top > ChessAI.MATE - 1000 ? 0 : 60;
+      var rivals = scores.filter(function (s) {
+        if (allowed[s.uci]) return false;
+        if (mateInOne && s.mate) return false;   /* any mate is accepted by the trainer */
+        return s.score >= top - tolerance;
+      });
+      report(rivals.length === 0, p.id + ' has one solution',
+        rivals.length ? 'also playable: ' + rivals.map(function (r) {
+          return r.uci + ' (' + r.score + ')';
+        }).join(', ') : p.moves[0]);
     }
 
     /* alternative solutions the trainer also accepts must at least be legal and winning */

@@ -3,12 +3,13 @@
 A browser chess trainer with three modes, written from scratch — no chess library, no engine
 binary, no build step, no server. Open `index.html` and it runs.
 
-- **Tactics** — 35 rated puzzles from 400 to 2100, with an Elo-style rating that moves with
+- **Tactics** — 36 rated puzzles from 400 to 2100, with an Elo-style rating that moves with
   you. Solve first time and it goes up; miss it or peek at the solution and it goes down.
-  Each puzzle has a hint, a full solution replay, and an explanation of the pattern. The
-  harder end includes Boden's mate, Anastasia's mate, Legall's mate, a windmill, and a pawn
-  breakthrough. A difficulty selector lets you jump straight to a band instead of waiting
-  for your rating to get there.
+  Each puzzle has a hint, a full solution replay, and an explanation of the pattern. Four
+  are positions from real games — the Opera Game, the Immortal Game, Légal's mate and the
+  Blackburne Shilling trap — and are credited on screen. The rest of the hard end covers
+  Boden's mate, Anastasia's mate, a windmill and a pawn breakthrough. A difficulty selector
+  lets you jump straight to a band instead of waiting for your rating to get there.
 - **Play the engine** — four strength levels, either colour, take-backs, hints and a live
   evaluation bar.
 - **Openings** — ten main lines to drill. You play one side, the line answers back, wrong
@@ -62,23 +63,34 @@ and promotion bugs:
 ## Validating the puzzles
 
 Replaying a solution line proves it is legal. It does not prove it is *right* — a solution
-can be perfectly legal and still lose to a reply you never considered. So `validate.html`
-does three more things:
+can be perfectly legal and still lose to a reply you never considered, and a position can
+parse cleanly and still be one no game could ever reach. So `validate.html` does five more
+things:
 
-1. **Forced-mate proof.** Every puzzle claiming mate is checked exhaustively against *every*
+1. **Position legality.** The side *not* to move must not be in check — otherwise the
+   previous move was illegal and the position is impossible. Also one king each, and no
+   pawns on the first or eighth rank.
+2. **Forced-mate proof.** Every puzzle claiming mate is checked exhaustively against *every*
    black defence, not just the scripted one. A "mate in 2" that only mates if Black
    cooperates fails here.
-2. **Engine oracle.** Every solution move is put to the search: if the engine has a move
+3. **Engine oracle.** Every solution move is put to the search: if the engine has a move
    worth more than 60 centipawns more, the puzzle fails. This is what catches a solution
    that simply hangs a piece — a queen fork is worthless if the forked piece defends the
    forking square.
-3. **Material accounting.** Puzzles claiming to win material must actually end at least two
+4. **Solution uniqueness.** Every root move is scored with a full window, and any move as
+   good as the solution must either *be* the solution or be declared in `alts`. A puzzle
+   with two equally good answers is a puzzle that tells an honest solver they are wrong.
+   Mate scores encode distance-to-mate, so when the best move mates only an equally fast
+   mate counts as a rival — otherwise a mate in five looks like a rival of a mate in one.
+5. **Material accounting.** Puzzles claiming to win material must actually end at least two
    pawns up, counted from the board.
 
-Between them these caught four bad puzzles that legality checking alone was happy with,
-including one "pin exercise" that was really just mate in one, and two forks where the
-target defended the fork square. `?deep=1` runs the oracle on every move of every solution
-rather than just the first.
+Together these have caught eleven bad puzzles that legality checking alone was happy with:
+two impossible positions (a rook already giving check), a "pin exercise" that was really
+mate in one, three forks where the target defended the fork square, a windmill with a faster
+mate available, several positions with two equally good solutions, and an underpromotion
+puzzle that won a queen and reached a dead-drawn K+N vs K ending. `?deep=1` runs the oracle
+on every move of every solution rather than just the first, and enables the uniqueness pass.
 
 The oracle is a safety net, not an authority. It searches to a fixed depth, so it is blind
 to long forcing ideas — in the pawn-breakthrough study it prefers a move that objectively
@@ -113,6 +125,7 @@ Append to `js/puzzles.js`:
   explain: '...',
 
   // optional
+  game: 'Morphy — Duke of Brunswick, Paris 1858',       // credited on screen
   alts: [{ uci: 'c1e3', note: 'why this also wins' }],  // second solutions the trainer accepts
   refutation: 'dxe5',                // required for goal: 'trap' — Black's better defence
   oracle: 'first'                    // engine-check only move 1, with a comment saying why
