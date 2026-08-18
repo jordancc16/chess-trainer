@@ -184,7 +184,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--depth', type=int, default=20)
     ap.add_argument('--only', default='')
-    ap.add_argument('--threads', type=int, default=10)
+    # Threads=1 by default, deliberately. Multi-threaded Stockfish is not
+    # deterministic: thread scheduling changes the search, so the same puzzle can
+    # pass one run and fail the next. Two puzzles were "repaired" on the strength
+    # of verdicts that a second run contradicted. A verifier whose answers move
+    # under load is worse than no verifier, so correctness beats speed here.
+    ap.add_argument('--threads', type=int, default=1)
     ap.add_argument('--fix', default='', help='write a JSON patch of repaired lines here')
     args = ap.parse_args()
 
@@ -196,6 +201,8 @@ def main():
 
     engine = chess.engine.SimpleEngine.popen_uci(SF)
     engine.configure({'Threads': args.threads, 'Hash': 512})
+    if args.threads > 1:
+        print('WARNING: >1 thread — verdicts will not be reproducible\n', flush=True)
     bad = 0
     patch = {}
     try:
