@@ -188,7 +188,7 @@
     {
       id: 'p29', rating: 1350, themes: ['double check', 'discovered check', 'fork'],
       fen: '3k4/q7/8/8/3N4/8/8/3R3K w - - 0 1',
-      moves: ['d4c6', 'd8c8', 'c6a7'],
+      moves: ['d4c6', 'd8e8', 'c6a7'],
       goal: 'material',
       hint: 'The knight is standing on the rook\'s line. Move it somewhere that also checks.',
       explain: 'Nc6+ is a double check — from the knight and from the rook behind it. A double check can never be blocked or answered by a capture, so the king must move and the queen on a7 is simply lost.'

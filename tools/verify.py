@@ -129,10 +129,30 @@ def check(engine, p, depth):
     if board.is_insufficient_material():
         fails.append('final position is a draw by insufficient material')
         return fails
+    if bare_king_loss(board, solver):
+        return fails          # a known forced win, whatever the number says
     final = cp(engine.analyse(board, chess.engine.Limit(depth=depth))['score'], solver)
     if final < WIN:
         fails.append(f'final position is not winning ({final}cp for the solver)')
     return fails
+
+
+def bare_king_loss(board, solver):
+    """Opponent down to a lone king against enough material to force mate.
+
+    Bishop and knight against a bare king is a forced win, but engines score it
+    around +2 because the mate is 30-odd moves away. That is a fact about the
+    endgame, not an opinion about the position, so it should not be decided by a
+    centipawn threshold."""
+    theirs = [p for sq, p in board.piece_map().items() if p.color != solver]
+    if any(p.piece_type != chess.KING for p in theirs):
+        return False
+    ours = [p.piece_type for sq, p in board.piece_map().items()
+            if p.color == solver and p.piece_type != chess.KING]
+    if any(t in (chess.QUEEN, chess.ROOK, chess.PAWN) for t in ours):
+        return True
+    minors = [t for t in ours if t in (chess.BISHOP, chess.KNIGHT)]
+    return len(minors) >= 2 and minors.count(chess.KNIGHT) < 2
 
 
 def repair(engine, p, depth):
