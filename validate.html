@@ -164,7 +164,7 @@
   function oracleVerdict(fen, uci) {
     var g = new Chess(fen);
     var engine = new ChessAI.Engine();
-    var best = engine.think(g, { depth: 5, time: 1500, skill: 3 });
+    var best = engine.think(g, { depth: 4, time: 350, skill: 3, varyOpenings: false });
     if (!best || !best.move) return { ok: false, detail: 'engine found no move' };
     var bestUci = Chess.algebraic(best.move.from) + Chess.algebraic(best.move.to) +
       ((best.move.flags & Chess.FLAG_PROMO) ? Chess.SYMBOLS[best.move.promotion] : '');
@@ -175,7 +175,7 @@
     /* A move that ends the game cannot be searched, and nothing beats mate. */
     if (g2.isCheckmate()) return { ok: true, detail: uci + ' is mate' };
     var e2 = new ChessAI.Engine();
-    var reply = e2.think(g2, { depth: 4, time: 1200, skill: 3 });
+    var reply = e2.think(g2, { depth: 3, time: 300, skill: 3, varyOpenings: false });
     var ourScore = reply ? -reply.score : 0;
     var gap = best.score - ourScore;
     return {
