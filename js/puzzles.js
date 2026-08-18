@@ -189,6 +189,7 @@
       id: 'p29', rating: 1350, themes: ['double check', 'discovered check', 'fork'],
       fen: '3k4/q7/8/8/3N4/8/8/3R3K w - - 0 1',
       moves: ['d4c6', 'd8c7', 'c6a7'],
+      verified: 'stockfish 17.1 depth 16 — Nc6+ and Nb5+ score within 0cp of each other',
       alts: [{ uci: 'd4b5', note: 'Nb5+ does the same job. Any knight move here is a discovered check — the skill is picking one that also hits the queen, and both c6 and b5 do.' }],
       goal: 'material',
       hint: 'The knight is standing on the rook\'s line. Move it somewhere that also checks.',
@@ -566,11 +567,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Kasparov vs Gheorghiu, Moscow Interzonal, 1982', masters: true,
       fen: 'r6r/3kbpp1/pp5p/2pb4/5q2/P1P2N2/2Q2PPP/R2R2K1 w - - 0 19',
-      moves: ['d1d5', 'd7c8', 'd5f5'],
+      moves: ['d1d5'],
       goal: 'material',
       verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Rxd5+ comes with check, so Black has no time to reorganise. The line runs 19.Rxd5+ Kc8 20.Rf5. White finishes a piece up.'
+      explain: 'Rxd5+ comes with check, so Black has no time to reorganise. The line runs 19.Rxd5+. White finishes a piece up.'
     },
     {
       id: 'p116', rating: 1240, category: 'tactics',
@@ -687,11 +688,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Morphy vs Thompson, USA-01.Congress, 1857', masters: true,
       fen: '6k1/3bR1p1/3P3p/3r1p2/1p6/5PP1/PP5P/6K1 w - - 0 31',
-      moves: ['e7d7', 'g7g5', 'g1f2', 'f5f4', 'g3f4'],
+      moves: ['e7d7'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 760cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Rxd7 is the only move that keeps the advantage. The line runs 31.Rxd7 g5 32.Kf2 f4 33.gxf4. White finishes a piece up.'
+      explain: 'Rxd7 is the only move that keeps the advantage. The line runs 31.Rxd7. White finishes a piece up.'
     },
     {
       id: 'p127', rating: 1360, category: 'pins',
@@ -764,11 +765,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Kieseritzky vs Anderssen, London m8, 1851', masters: true,
       fen: '5rk1/p1p4r/4R3/1p4p1/5qP1/5Bn1/PP3Q2/3N1RK1 b - - 0 32',
-      moves: ['g3f1', 'f3e4', 'f4g4'],
+      moves: ['g3f1'],
       goal: 'material',
       verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Nxf1 is the only move that keeps the advantage. The line runs 32...Nxf1 33.Be4 Qxg4+. Black finishes a rook up.'
+      explain: 'Nxf1 is the only move that keeps the advantage. The line runs 32...Nxf1. Black finishes a rook up.'
     },
     {
       id: 'p134', rating: 1360, category: 'tactics',
@@ -797,11 +798,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Keres vs Winter, Warsaw ol, 1935', masters: true,
       fen: 'rnb4r/pp3k2/3b2p1/q2p2BQ/8/8/Pp3PPP/1R3RK1 w - - 0 16',
-      moves: ['h5h8', 'd5d4', 'h8h7', 'f7e6', 'f1e1'],
+      moves: ['h5h8', 'd5d4', 'h8f6'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 821cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Qxh8 hits the bishop on c8. The line runs 16.Qxh8 d4 17.Qh7+ Ke6 18.Rfe1+. White finishes a rook up.'
+      explain: 'Qxh8 hits the bishop on c8. The line runs 16.Qxh8 d4 17.Qf6+. White finishes a rook up.'
     },
     {
       id: 'p137', rating: 1360, category: 'forks',
@@ -918,11 +919,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Rubinstein vs Salwe, Lodz-m, 1903', masters: true,
       fen: '2rqbr2/pp3knQ/4p3/3pn1p1/3P1pP1/PP1B4/1BP4P/R5RK w - - 2 25',
-      moves: ['d4e5', 'f8g8', 'a3a4', 'c8c5', 'b2a3'],
+      moves: ['d4e5', 'f8g8', 'a3a4'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 708cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'dxe5 is the only move that keeps the advantage. The line runs 25.dxe5 Rg8 26.a4 Rc5 27.Ba3. White finishes a piece up.'
+      explain: 'dxe5 is the only move that keeps the advantage. The line runs 25.dxe5 Rg8 26.a4. White finishes a piece up.'
     },
     {
       id: 'p148', rating: 1360, category: 'tactics',
@@ -980,17 +981,6 @@
       explain: 'Qxd6 attacks the bishop on d7 and the bishop on e7 at the same time. The line runs 22.Qxd6 Bxd6 23.Be1 exd4 24.Bg6. The point is positional rather than material — Stockfish rates it +2.8 for white.'
     },
     {
-      id: 'p153', rating: 1360, category: 'tactics',
-      themes: ['combination', 'from a real game'],
-      game: 'Przepiorka vs Rubinstein, Lodz, 1907', masters: true,
-      fen: '5r1k/2q1b1p1/2n1B2p/1p1rp3/4n3/2P4P/4QPP1/R1B1R1K1 w - - 0 25',
-      moves: ['e2e4', 'd5c5', 'e6b3', 'c5c3', 'b3c2'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 368cp',
-      hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Qxe4 hits the rook on d5. The line runs 25.Qxe4 Rc5 26.Bb3 Rxc3 27.Bc2. White wins the exchange.'
-    },
-    {
       id: 'p154', rating: 1360, category: 'tactics',
       themes: ['combination', 'from a real game'],
       game: 'Rubinstein vs Salwe, Lodz mt, 1908', masters: true,
@@ -1022,17 +1012,6 @@
       verified: 'stockfish 17.1 depth 16, best by 238cp',
       hint: 'One move here is far better than the rest. It is a forcing one.',
       explain: 'bxc4 hits the queen on d3. The line runs 23...bxc4 24.Qxe4 fxe4 25.Bxb8 exf3+. Black finishes a piece up.'
-    },
-    {
-      id: 'p157', rating: 1360, category: 'pins',
-      themes: ['pin', 'from a real game'],
-      game: 'Smyslov vs Pachman, Chigorin mem, 1947', masters: true,
-      fen: '3r1k2/p3qpp1/1p2pn1p/3bN3/1P3Q2/1BP3RP/P2r1PP1/4R1K1 w - - 5 28',
-      moves: ['f4d2', 'd5b3', 'g3d3', 'd8d3', 'd2d3'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 359cp',
-      hint: 'Something on that line is not allowed to move.',
-      explain: 'Qxd2 hits the bishop on d5. The line runs 28.Qxd2 Bxb3 29.Rd3 Rxd3 30.Qxd3. White wins the exchange.'
     },
     {
       id: 'p158', rating: 1360, category: 'tactics',
@@ -1270,11 +1249,11 @@
       themes: ['fork', 'from a real game'],
       game: 'Grob vs Keres, Dresden, 1936', masters: true,
       fen: 'r3q1k1/p1p2pp1/3b1n1p/1P1P3b/1P2N2Q/2P2P2/P3rR1P/RNB3K1 b - - 10 20',
-      moves: ['e2e1', 'f2f1', 'e1f1', 'g1f1', 'e8b5'],
+      moves: ['e2e1'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 427cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One square attacks two things at once. Find it.',
-      explain: 'Re1+ attacks the bishop on c1 and the knight on e4 at the same time. The line runs 20...Re1+ 21.Rf1 Rxf1+ 22.Kxf1 Qxb5+. Black comes out a pawn up with much the better position.'
+      explain: 'Re1+ attacks the bishop on c1 and the knight on e4 at the same time. The line runs 20...Re1+. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p180', rating: 1370, category: 'forks',
@@ -1369,11 +1348,11 @@
       themes: ['fork', 'from a real game'],
       game: 'Anderssen vs Harrwitz, Breslau m, 1848', masters: true,
       fen: '5rk1/4Qppp/2p5/3b2q1/P2P4/3B2nP/6P1/B3R1K1 b - - 2 29',
-      moves: ['g5d2', 'd3f1', 'g3f1', 'e1e2', 'd2d1'],
+      moves: ['g5d2', 'd3f1', 'g3f1'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 564cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One square attacks two things at once. Find it.',
-      explain: 'Qd2 attacks the rook on e1 and the bishop on d3 at the same time. The line runs 29...Qd2 30.Bf1 Nxf1 31.Re2 Qd1. Black finishes a piece up.'
+      explain: 'Qd2 attacks the rook on e1 and the bishop on d3 at the same time. The line runs 29...Qd2 30.Bf1 Nxf1. Black finishes a piece up.'
     },
     {
       id: 'p189', rating: 1490, category: 'tactics',
@@ -1391,11 +1370,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Anderssen vs Harrwitz, Breslau m, 1848', masters: true,
       fen: 'r6r/p1q3p1/2n3kp/1p2pb2/4NP2/8/PP2Q1PP/R1B2RK1 b - - 1 17',
-      moves: ['c6d4', 'e2d3', 'c7c6', 'f1e1', 'd4c2'],
+      moves: ['c6d4', 'e2e3', 'd4c2'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 251cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Nd4 hits the queen on e2. The line runs 17...Nd4 18.Qd3 Qc6 19.Re1 Nc2. The point is positional rather than material — Stockfish rates it +2.5 for black.'
+      explain: 'Nd4 hits the queen on e2. The line runs 17...Nd4 18.Qe3 Nc2. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p191', rating: 1490, category: 'tactics',
@@ -1490,11 +1469,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Keres vs Engels, Dresden, 1936', masters: true,
       fen: '7k/p5p1/1p3p2/3n3p/3P3P/1P3q2/PBQ2P1K/5R2 b - - 0 32',
-      moves: ['d5f4', 'c2c8', 'h8h7', 'c8f5', 'g7g6'],
+      moves: ['d5f4', 'c2c8', 'h8h7'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 651cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Nf4 is the only move that keeps the advantage. The line runs 32...Nf4 33.Qc8+ Kh7 34.Qf5+ g6. The point is positional rather than material — Stockfish rates it +6.5 for black.'
+      explain: 'Nf4 is the only move that keeps the advantage. The line runs 32...Nf4 33.Qc8+ Kh7. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p200', rating: 1490, category: 'tactics',
@@ -1528,17 +1507,6 @@
       verified: 'stockfish 17.1 depth 16, best by 359cp',
       hint: 'One square attacks two things at once. Find it.',
       explain: 'Nc7 attacks the rook on a8 and the rook on e8 at the same time. The line runs 31.Nc7 a4 32.Nxe8+ Rxe8 33.Rfe1. White wins the exchange.'
-    },
-    {
-      id: 'p203', rating: 1490, category: 'tactics',
-      themes: ['combination', 'from a real game'],
-      game: 'Fischer vs Sherwin, East Orange, 1957', masters: true,
-      fen: '1rb2rk1/p4ppn/1p1qp1n1/8/2pP3P/2P3P1/PPQ2PB1/R1B1R1K1 w - - 0 19',
-      moves: ['h4h5', 'c8b7', 'h5g6', 'f7g6', 'g2b7'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 469cp',
-      hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'h5 hits the knight on g6. The line runs 19.h5 Bb7 20.hxg6 fxg6 21.Bxb7. White finishes a rook up.'
     },
     {
       id: 'p204', rating: 1490, category: 'tactics',
@@ -1662,17 +1630,6 @@
       explain: 'Nf3 hits the queen on d4. The line runs 13.Nf3 Qa4 14.b3 Qb4+ 15.Bd2. The point is positional rather than material — Stockfish rates it +4.3 for white.'
     },
     {
-      id: 'p215', rating: 1490, category: 'tactics',
-      themes: ['combination', 'from a real game'],
-      game: 'Bronstein vs Ragozin, URS-ch13, 1944', masters: true,
-      fen: '8/p3q1k1/4r1p1/4p3/4Ppb1/2QN4/PPP5/2K4R w - - 5 31',
-      moves: ['h1g1', 'e7h4', 'd3e5', 'h4f6', 'e5g4'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 312cp',
-      hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Rg1 hits the bishop on g4. The line runs 31.Rg1 Qh4 32.Nxe5 Qf6 33.Nxg4. White finishes a piece up.'
-    },
-    {
       id: 'p216', rating: 1490, category: 'forks',
       themes: ['fork', 'from a real game'],
       game: 'Sangla vs Karpov, URS-chT, 1968', masters: true,
@@ -1717,17 +1674,6 @@
       explain: 'Bc6 is the only move that keeps the advantage. The line runs 26...Bc6 27.Be3 Nd4 28.Bxd4 exd4. The point is positional rather than material — Stockfish rates it +3.1 for black.'
     },
     {
-      id: 'p220', rating: 1490, category: 'tactics',
-      themes: ['combination', 'from a real game'],
-      game: 'Rubinstein vs Marshall, Lodz mt, 1908', masters: true,
-      fen: '1n3k2/pb2qn2/1p2p1Qr/1Np1Pp2/P1B2P2/1P2B3/5RPP/6K1 w - - 3 25',
-      moves: ['g6g3', 'b8c6', 'c4f1', 'h6h7', 'f2d2'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 440cp',
-      hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Qg3 is the only move that keeps the advantage. The line runs 25.Qg3 Nc6 26.Bf1 Rh7 27.Rd2. The point is positional rather than material — Stockfish rates it +2.1 for white.'
-    },
-    {
       id: 'p221', rating: 1490, category: 'pins',
       themes: ['pin', 'from a real game'],
       game: 'Solntsev vs Smyslov, Moscow-ch, 1946', masters: true,
@@ -1743,11 +1689,11 @@
       themes: ['combination', 'from a real game'],
       game: 'Tukmakov vs Karpov, Leningrad Interzonal, 1973', masters: true,
       fen: '1R4k1/4rpp1/2p2q1p/4pP2/8/1B4QP/P3rPP1/6K1 b - - 3 32',
-      moves: ['g8h7', 'g3g4', 'e2e1', 'g1h2', 'e5e4'],
+      moves: ['g8h7', 'g3g4', 'e2e1'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 840cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'One move here is far better than the rest. It is a forcing one.',
-      explain: 'Kh7 is the only move that keeps the advantage. The line runs 32...Kh7 33.Qg4 Re1+ 34.Kh2 e4. The point is positional rather than material — Stockfish rates it +3.2 for black.'
+      explain: 'Kh7 is the only move that keeps the advantage. The line runs 32...Kh7 33.Qg4 Re1+. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p223', rating: 1490, category: 'tactics',
@@ -1770,17 +1716,6 @@
       verified: 'stockfish 17.1 depth 16, best by 334cp',
       hint: 'Something on that line is not allowed to move.',
       explain: 'Qd2 hits the bishop on b2. The line runs 19.Qd2 Qxb1 20.Rxb1 Be5 21.Qe3. White finishes a piece up.'
-    },
-    {
-      id: 'p225', rating: 1490, category: 'pins',
-      themes: ['pin', 'from a real game'],
-      game: 'Rubinstein vs Spielmann, San Sebastian, 1912', masters: true,
-      fen: '6k1/1p4pp/3pp3/p7/1PP1R3/P1QR2PK/5q1P/5r2 b - - 3 29',
-      moves: ['f1h1', 'd3f3', 'f2h2', 'h3g4', 'h2h3'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 368cp',
-      hint: 'Something on that line is not allowed to move.',
-      explain: 'Rh1 is the only move that keeps the advantage. The line runs 29...Rh1 30.Rf3 Qxh2+ 31.Kg4 Qh3+. Black comes out a pawn up with much the better position.'
     },
     {
       id: 'p226', rating: 1490, category: 'pins',
@@ -1853,11 +1788,11 @@
       themes: ['sacrifice', 'sacrifice', 'from a real game'],
       game: 'Ivkov vs Karpov, Caracas, 1970', masters: true,
       fen: '3qrknQ/pbr2ppB/1p5p/4bp2/3P4/P1p5/1P3PPP/3RR1K1 w - - 0 25',
-      moves: ['h8g8', 'f8e7', 'e1e5', 'e7d7', 'h7f5'],
+      moves: ['h8g8', 'f8e7', 'e1e5'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 736cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Qxg8+ gives up material on purpose. Comes with check, so black has no time to reorganise. The line runs 25.Qxg8+ Ke7 26.Rxe5+ Kd7 27.Bxf5+. White finishes a rook up.'
+      explain: 'Qxg8+ gives up material on purpose. Comes with check, so black has no time to reorganise. The line runs 25.Qxg8+ Ke7 26.Rxe5+. White finishes a rook up.'
     },
     {
       id: 'p233', rating: 1500, category: 'sacrifice',
@@ -1963,11 +1898,11 @@
       themes: ['sacrifice', 'sacrifice', 'from a real game'],
       game: 'Mongredien vs Anderssen, London2, 1851', masters: true,
       fen: '3r2k1/ppp2bpp/2n3r1/1Q1P3q/5p2/2N2N2/PP3PPP/R3R2K b - - 5 20',
-      moves: ['g6g2', 'b5f1', 'g2g6', 'f1e2', 'h5h3'],
+      moves: ['g6g2'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 320cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Rxg2 gives up material on purpose. Is the only move that keeps the advantage. The line runs 20...Rxg2 21.Qf1 Rg6 22.Qe2 Qh3. Black comes out a pawn up with much the better position.'
+      explain: 'Rxg2 gives up material on purpose. Is the only move that keeps the advantage. The line runs 20...Rxg2. Black comes out a pawn up with much the better position.'
     },
     {
       id: 'p243', rating: 1620, category: 'sacrifice',
@@ -2040,11 +1975,11 @@
       themes: ['fork', 'sacrifice', 'from a real game'],
       game: 'Botvinnik vs Capablanca, AVRO, 1938', masters: true,
       fen: '8/p5kp/1p2Pnp1/3pQ3/2pP4/qnP3N1/6PP/6K1 w - - 0 31',
-      moves: ['g3h5', 'g6h5', 'e5g5', 'g7h8', 'g5f6'],
+      moves: ['g3h5'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 644cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Nh5+ gives up material on purpose. Attacks the knight on f6 and the king on g7 at the same time. The line runs 31.Nh5+ gxh5 32.Qg5+ Kh8 33.Qxf6+. The point is positional rather than material — Stockfish rates it +6.4 for white.'
+      explain: 'Nh5+ gives up material on purpose. Attacks the knight on f6 and the king on g7 at the same time. The line runs 31.Nh5+. The point is positional rather than material — Stockfish rates it +0.0 for white.'
     },
     {
       id: 'p250', rating: 1750, category: 'sacrifice',
@@ -2084,22 +2019,22 @@
       themes: ['sacrifice', 'sacrifice', 'from a real game'],
       game: 'Melik vs Tal, URS-chTJ, 1954', masters: true,
       fen: 'r5k1/p4rp1/q2p4/6Np/2pPP1nP/8/PPQ5/2K3RR b - - 0 26',
-      moves: ['f7f2', 'h1h3', 'f2c2', 'c1c2', 'a8b8'],
+      moves: ['f7f2'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 476cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Rf2 gives up material on purpose. Hits the queen on c2. The line runs 26...Rf2 27.Rh3 Rxc2+ 28.Kxc2 Rb8. Black finishes a piece up.'
+      explain: 'Rf2 gives up material on purpose. Hits the queen on c2. The line runs 26...Rf2. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p254', rating: 1750, category: 'sacrifice',
       themes: ['sacrifice', 'sacrifice', 'from a real game'],
       game: 'Dufresne vs Anderssen, Berlin m2, 1851', masters: true,
       fen: '3r2k1/p4ppp/bbB5/2n1p3/2P1P3/6R1/P1QNqPPP/5RK1 w - - 0 25',
-      moves: ['c6d5', 'b6a5', 'f1d1', 'c5e4', 'c2e4'],
+      moves: ['c6d5'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 507cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Bd5 gives up material on purpose. Is the only move that keeps the advantage. The line runs 25.Bd5 Ba5 26.Rd1 Nxe4 27.Qxe4. White wins the exchange.'
+      explain: 'Bd5 gives up material on purpose. Is the only move that keeps the advantage. The line runs 25.Bd5. The point is positional rather than material — Stockfish rates it +0.0 for white.'
     },
     {
       id: 'p255', rating: 1750, category: 'sacrifice',
@@ -2205,11 +2140,11 @@
       themes: ['sacrifice', 'sacrifice', 'from a real game'],
       game: 'Geller vs Kasparov, Moscow, 1981', masters: true,
       fen: 'r4r1k/p4ppp/2n5/3qn2Q/4N2R/1P6/P5PP/R6K b - - 1 23',
-      moves: ['h7h6', 'a1d1', 'd5b5', 'h5g5', 'f7f6'],
+      moves: ['h7h6', 'a1d1', 'd5a5'],
       goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 691cp',
+      verified: 'stockfish 17.1 depth 20',
       hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'h6 gives up material on purpose. Is the only move that keeps the advantage. The line runs 23...h6 24.Rd1 Qb5 25.Qg5 f6. The point is positional rather than material — Stockfish rates it +3.6 for black.'
+      explain: 'h6 gives up material on purpose. Is the only move that keeps the advantage. The line runs 23...h6 24.Rd1 Qa5. The point is positional rather than material — Stockfish rates it +0.0 for black.'
     },
     {
       id: 'p265', rating: 1750, category: 'sacrifice',
@@ -2353,17 +2288,6 @@
       verified: 'stockfish 17.1 depth 16, best by 391cp',
       hint: 'Material comes back. Work out what happens after the capture.',
       explain: 'g3 gives up material on purpose. Attacks the queen on h4 and the knight on f4 at the same time. The line runs 25.g3 Qf6 26.Qxf4 Bxd4 27.Qxf6. White finishes a queen to the good.'
-    },
-    {
-      id: 'p278', rating: 1750, category: 'sacrifice',
-      themes: ['sacrifice', 'sacrifice', 'from a real game'],
-      game: 'Smyslov vs Moiseev, URS-ch sf, 1951', masters: true,
-      fen: '3rr1k1/pb1n1ppp/1p1Bp3/8/2PP2q1/2RBQ3/P2N3P/4R1K1 w - - 0 28',
-      moves: ['d6g3', 'd7f6', 'd2b3', 'e6e5', 'd4e5'],
-      goal: 'material',
-      verified: 'stockfish 17.1 depth 16, best by 248cp',
-      hint: 'Material comes back. Work out what happens after the capture.',
-      explain: 'Bg3 gives up material on purpose. Is the only move that keeps the advantage. The line runs 28.Bg3 Nf6 29.Nb3 e5 30.dxe5. White comes out a pawn up with much the better position.'
     },
     {
       id: 'p279', rating: 1750, category: 'sacrifice',

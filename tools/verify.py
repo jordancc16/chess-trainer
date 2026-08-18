@@ -62,8 +62,8 @@ def cp(score, pov):
     return s.score()
 
 
-def best_moves(engine, board, depth, n=2):
-    info = engine.analyse(board, chess.engine.Limit(depth=depth), multipv=n)
+def best_moves(engine, board, depth, n=2, game=None):
+    info = engine.analyse(board, chess.engine.Limit(depth=depth), multipv=n, game=game)
     pov = board.turn
     return [(i['pv'][0].uci(), cp(i['score'], pov)) for i in info if i.get('pv')]
 
@@ -83,7 +83,7 @@ def check(engine, p, depth):
     solver = board.turn
 
     # 1. the solution must be the unique best move
-    tops = best_moves(engine, board, depth, 2)
+    tops = best_moves(engine, board, depth, 2, game=p['id'])
     if not tops:
         return ['engine found no moves']
     if tops[0][0] != p['moves'][0] and tops[0][0] not in p.get('alts', []):
@@ -109,10 +109,10 @@ def check(engine, p, depth):
             fails.append(f'move {i+1} illegal: {uci}')
             break
         if i > 0 and p['goal'] != 'trap':
-            tb = best_moves(engine, board, depth, 1)
+            tb = best_moves(engine, board, depth, 1, game=p['id'])
             if tb and tb[0][0] != uci:
                 after_ours = board.copy(); after_ours.push(mv)
-                ours = -cp(engine.analyse(after_ours, chess.engine.Limit(depth=depth - 2))['score'],
+                ours = -cp(engine.analyse(after_ours, chess.engine.Limit(depth=depth - 2), game=p['id'])['score'],
                            not board.turn)
                 if tb[0][1] - ours > (SOLVER_SLACK if i % 2 == 0 else REPLY_SLACK):
                     who = 'solver' if i % 2 == 0 else 'defence'
@@ -131,7 +131,7 @@ def check(engine, p, depth):
         return fails
     if bare_king_loss(board, solver):
         return fails          # a known forced win, whatever the number says
-    final = cp(engine.analyse(board, chess.engine.Limit(depth=depth))['score'], solver)
+    final = cp(engine.analyse(board, chess.engine.Limit(depth=depth), game=p['id'])['score'], solver)
     if final < WIN:
         fails.append(f'final position is not winning ({final}cp for the solver)')
     return fails

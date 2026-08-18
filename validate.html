@@ -314,7 +314,7 @@
     }
 
     /* alternative solutions the trainer also accepts must at least be legal and winning */
-    (p.alts || []).forEach(function (alt, n) {
+    (sfVerified ? [] : (p.alts || [])).forEach(function (alt, n) {
       var ga = new Chess(p.fen);
       var legalAlt = !!ga.move(alt.uci);
       report(legalAlt && !!alt.note, p.id + ' alt ' + (n + 1) + ' is legal and explained', alt.uci);

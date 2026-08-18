@@ -3,8 +3,8 @@
 A browser chess trainer with three modes, written from scratch — no chess library, no engine
 binary, no build step, no server. Open `index.html` and it runs.
 
-- **Tactics** — 226 rated puzzles across ten categories, with an Elo-style rating that
-  moves with you. 180 of them are positions mined out of real master games — Morphy,
+- **Tactics** — 218 rated puzzles across ten categories, with an Elo-style rating that
+  moves with you. 179 of them are positions mined out of real master games — Morphy,
   Anderssen, Capablanca, Tal, Fischer, Kasparov and others — chosen by Stockfish because
   one move there is decisively better than every alternative and the position is level
   without it. Every one is credited on screen with players, event and year, and in every
@@ -71,7 +71,18 @@ There are two layers. `validate.html` runs in the browser against the from-scrat
 and covers matters of fact. `tools/verify.py` runs Stockfish over the whole set and covers
 matters of judgement — every solver move must be its best, every reply must be its best
 defence, the solution must be uniquely winning, and **the position left at the end must be
-actually won**, not equal, not drawn and above all not lost. That last check is the one that
+actually won**, not equal, not drawn and above all not lost. It runs single-threaded with the
+engine's state reset between puzzles, because otherwise the verdicts are not reproducible:
+multi-threaded Stockfish searches differently run to run, and its transposition table carries
+over from the previous position, so the failing set moved between sweeps and two puzzles were
+"repaired" on readings a later run contradicted.
+
+`tools/settle.py` closes the loop: verify, rebuild any drifting line deeper and shorter,
+re-verify, and drop what cannot be saved. It is there because doing this by hand does not
+converge. The underlying lesson is that **long solution lines are not verifiable at these
+margins** — the fifth move of a principal variation is a suggestion at one depth, not a fact,
+and shifts by 60-120cp when you look deeper. Lines that keep drifting are cut back to the key
+move, which is the part that really is verified: unique, decisive, and leaving a won position. That last check is the one that
 matters: it is very easy to compose a position that shows a motif beautifully and leaves the
 solver in a dead draw. Several early puzzles did exactly that, including two knight forks
 that won a queen into K+N vs K.
