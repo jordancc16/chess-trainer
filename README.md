@@ -3,14 +3,14 @@
 A browser chess trainer with three modes, written from scratch — no chess library, no engine
 binary, no build step, no server. Open `index.html` and it runs.
 
-- **Tactics** — 52 rated puzzles from 420 to 2100, sorted into nine categories (mating
-  patterns, forks, pins & skewers, discovered attacks, deflection & decoys, sacrifices,
-  endgames, opening traps, master games) with an Elo-style rating that moves with you.
-  Solve first time and it goes up; miss it or peek and it goes down. Every puzzle has a
-  hint, a solution replay, and an explanation. Nine carry a credit line: three real master
-  games (the Opera Game, the Immortal Game, Légal's mate) and six named opening traps
-  (Elephant, Lasker, Englund, Blackburne Shilling, and mates from the Caro-Kann and
-  Petrov). Category and difficulty selectors let you drill exactly what you want.
+- **Tactics** — 226 rated puzzles across ten categories, with an Elo-style rating that
+  moves with you. 180 of them are positions mined out of real master games — Morphy,
+  Anderssen, Capablanca, Tal, Fischer, Kasparov and others — chosen by Stockfish because
+  one move there is decisively better than every alternative and the position is level
+  without it. Every one is credited on screen with players, event and year, and in every
+  one the opponent's replies are the engine's best defence rather than a cooperative one.
+  The rest are hand-written pattern drills and named opening traps. Category and
+  difficulty selectors let you drill exactly what you want.
 - **Puzzle Rush** — three minutes, three strikes, puzzles easiest-first and getting harder.
   A wrong move costs a strike and moves you straight on.
 - **Board Vision** — thirty seconds to click as many named squares as you can with the
@@ -67,6 +67,15 @@ and promotion bugs:
 
 ## Validating the puzzles
 
+There are two layers. `validate.html` runs in the browser against the from-scratch engine
+and covers matters of fact. `tools/verify.py` runs Stockfish over the whole set and covers
+matters of judgement — every solver move must be its best, every reply must be its best
+defence, the solution must be uniquely winning, and **the position left at the end must be
+actually won**, not equal, not drawn and above all not lost. That last check is the one that
+matters: it is very easy to compose a position that shows a motif beautifully and leaves the
+solver in a dead draw. Several early puzzles did exactly that, including two knight forks
+that won a queen into K+N vs K.
+
 Replaying a solution line proves it is legal. It does not prove it is *right* — a solution
 can be perfectly legal and still lose to a reply you never considered, and a position can
 parse cleanly and still be one no game could ever reach. So `validate.html` does five more
@@ -104,8 +113,10 @@ what the engine is missing.
 
 ## The search
 
-The engine is written from scratch here — there is no Stockfish, no library and no binary,
-and nothing is fetched at runtime. `js/ai.js` is negamax with alpha-beta pruning, iterative
+The engine the app plays with is written from scratch — no Stockfish, no library, no binary,
+and nothing fetched at runtime. (Stockfish *is* used, but only as a development tool that
+never ships: it picks which positions from real games become puzzles and checks that each
+one is honest. See `tools/README.md`.) `js/ai.js` is negamax with alpha-beta pruning, iterative
 deepening to a time budget, MVV-LVA capture ordering, killer moves, a check extension, and a
 quiescence search so the engine does not stop counting in the middle of a trade. Evaluation
 is material plus piece-square tables, with separate king tables for the middlegame and the

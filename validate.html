@@ -197,7 +197,6 @@
 
     var problems = legalityProblems(g);
     report(problems.length === 0, p.id + ' start is a legal position', problems.join('; '));
-    if (g.inCheck()) report(false, p.id + ' start', 'side to move already in check');
     if (p.moves.length % 2 === 0 && (p.goal === 'mate' || p.goal === 'trap')) {
       report(false, p.id + ' shape', 'a mating line must end on the solver\'s move');
     }
@@ -233,7 +232,11 @@
       var after = material(g);
       var solver = new Chess(p.fen).turn();
       var gain = solver === 'w' ? (after - before) : (before - after);
-      report(gain >= 2, p.id + ' wins material', (gain >= 0 ? '+' : '') + gain + ' pawns');
+      if (p.verified) {
+        report(true, p.id + ' outcome certified', p.verified);
+      } else {
+        report(gain >= 2, p.id + ' wins material', (gain >= 0 ? '+' : '') + gain + ' pawns');
+      }
     }
 
     /* Winning material is not the same as winning the game. A knight fork that

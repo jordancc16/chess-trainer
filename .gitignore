@@ -8,3 +8,5 @@ tools/mined.json
 tools/mined.js
 tools/smoke.json
 tools/fixes.json
+tools/mined?.json
+tools/__pycache__/

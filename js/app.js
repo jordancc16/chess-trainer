@@ -179,12 +179,19 @@
         if (!s) return -120;                       /* prefer unseen */
         return 220 * (s.solved || 0);
       }
-      /* a little randomness so it is not the same puzzle twice in a row */
-      var head = pool.slice(0, 5);
+      /* Don't serve anything from the recent history. Avoiding only the immediately
+         previous puzzle still cycles a handful of them over and over. */
+      var recent = this.recent || (this.recent = []);
+      var unseen = pool.filter(function (p) { return recent.indexOf(p.id) < 0; });
+      if (unseen.length >= 3) pool = unseen;
+
+      var head = pool.slice(0, Math.max(3, Math.min(12, Math.ceil(pool.length / 3))));
       var choice = head[Math.floor(Math.random() * head.length)];
-      if (this.puzzle && head.length > 1) {
-        while (choice.id === this.puzzle.id) choice = head[Math.floor(Math.random() * head.length)];
-      }
+
+      recent.push(choice.id);
+      /* remember about a third of the pool, so a small category still rotates */
+      var keep = Math.max(4, Math.min(30, Math.floor(pool.length * 0.6)));
+      while (recent.length > keep) recent.shift();
       return choice;
     },
 

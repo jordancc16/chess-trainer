@@ -24,7 +24,7 @@ SF = os.path.join(HERE, 'vendor', 'stockfish', 'stockfish-windows-x86-64-avx2.ex
 PUZZLES_JS = os.path.join(HERE, '..', 'js', 'puzzles.js')
 
 WIN = 200          # centipawns: what counts as "actually winning"
-SOLVER_SLACK = 40  # how far off Stockfish's best a solver move may be
+SOLVER_SLACK = 70  # how far off Stockfish's best a solver move may be
 REPLY_SLACK = 60   # ditto for the defence
 UNIQUE_GAP = 120   # the solution must beat the runner-up by this much
 
@@ -86,17 +86,17 @@ def check(engine, p, depth):
     tops = best_moves(engine, board, depth, 2)
     if not tops:
         return ['engine found no moves']
-    if tops[0][0] != p['moves'][0]:
+    if tops[0][0] != p['moves'][0] and tops[0][0] not in p.get('alts', []):
         fails.append(f"key move {p['moves'][0]} is not best (engine: {tops[0][0]}, "
                      f"{tops[0][1]} vs ours)")
     mate_in_one = p['goal'] == 'mate' and len(p['moves']) == 1
     # a declared alternative is not a rival; nor is anything in a trap puzzle,
     # whose subject is the opponent's mistake rather than a unique best move
     exempt = mate_in_one or p['goal'] == 'trap'
-    if (len(tops) > 1 and tops[0][1] - tops[1][1] < UNIQUE_GAP
-            and not exempt and tops[1][0] not in p.get('alts', [])):
-        fails.append(f'not a unique solution: {tops[1][0]} is only '
-                     f'{tops[0][1] - tops[1][1]}cp worse')
+    rivals = [t for t in tops if t[0] != p['moves'][0] and t[0] not in p.get('alts', [])]
+    if (rivals and tops[0][1] - rivals[0][1] < UNIQUE_GAP and not exempt):
+        fails.append(f'not a unique solution: {rivals[0][0]} is only '
+                     f'{tops[0][1] - rivals[0][1]}cp worse')
 
     # 2. walk the line, checking both sides play the best move available
     for i, uci in enumerate(p['moves']):

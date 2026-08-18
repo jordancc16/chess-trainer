@@ -16,7 +16,14 @@ VALUE = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3,
 NAME = {chess.PAWN: 'pawn', chess.KNIGHT: 'knight', chess.BISHOP: 'bishop',
         chess.ROOK: 'rook', chess.QUEEN: 'queen', chess.KING: 'king'}
 
+THEME = {
+    'mating': 'mating attack', 'forks': 'fork', 'discovered': 'discovered attack',
+    'sacrifice': 'sacrifice', 'pins': 'pin', 'deflection': 'deflection',
+    'endgame': 'endgame', 'tactics': 'combination',
+}
+
 HINTS = {
+    'tactics': "One move here is far better than the rest. It is a forcing one.",
     'mating': "The king has fewer squares than it looks. Start with the most forcing move.",
     'forks': "One square attacks two things at once. Find it.",
     'discovered': "Move the piece in front and look at what wakes up behind it.",
@@ -82,6 +89,7 @@ def describe(entry):
     hits = targets_of(after, key.to_square)
     line = san_line(board, ucis)
     side = 'White' if solver == chess.WHITE else 'Black'
+    them = 'Black' if solver == chess.WHITE else 'White'
 
     # --- opening clause: what the key move actually does -------------------
     if end.is_checkmate():
@@ -92,7 +100,7 @@ def describe(entry):
     elif after.is_check() and key.to_square not in after.checkers():
         lead = f'{key_san} is a discovered check — the check comes from the piece behind it.'
     elif after.is_check():
-        lead = f'{key_san} comes with check, so Black has no time to reorganise.'
+        lead = f'{key_san} comes with check, so {them} has no time to reorganise.'
     elif hits:
         a = hits[0]
         lead = f'{key_san} hits the {a[0]} on {a[1]}.'
@@ -130,6 +138,12 @@ def describe(entry):
     return hint, explain
 
 
+def sf_note(e):
+    gap = e['sf']['gap']
+    how = 'a forced mate' if gap > 50000 else f'{gap}cp'
+    return f"stockfish 17.1 depth {e['sf']['depth']}, best by {how}"
+
+
 def js_string(s):
     return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
 
@@ -146,9 +160,12 @@ def main():
     for i, e in enumerate(data):
         pid = f'p{args.start + i}'
         hint, explain = describe(e)
-        themes = [e['category']]
+        themes = [THEME.get(e['category'], e['category'])]
         if e['goal'] == 'mate':
             themes.append('mate in %d' % ((len(e['moves']) + 1) // 2))
+        if e.get('sac'):
+            themes.append('sacrifice')
+        themes.append('from a real game')
         lines.append(
             "    {\n"
             f"      id: '{pid}', rating: {e['rating']}, category: '{e['category']}',\n"
@@ -157,8 +174,7 @@ def main():
             f"      fen: '{e['fen']}',\n"
             f"      moves: [{', '.join(js_string(m) for m in e['moves'])}],\n"
             f"      goal: '{e['goal']}',\n"
-            f"      verified: 'stockfish 17.1 depth {e['sf']['depth']}, "
-            f"best by {e['sf']['gap']}cp',\n"
+            f"      verified: {js_string(sf_note(e))},\n"
             f"      hint: {js_string(hint)},\n"
             f"      explain: {js_string(explain)}\n"
             "    }"

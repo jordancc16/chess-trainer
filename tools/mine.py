@@ -91,9 +91,50 @@ def classify(board, line, ends_in_mate):
     if len(board.piece_map()) <= 12:
         return 'endgame'
 
+    # A real pin or skewer: the slider now looks through one enemy piece at
+    # another one behind it. Anything else that happens to be a slider move is
+    # NOT a pin, and calling it one would be a lie on the puzzle card.
     if mover.piece_type in (chess.BISHOP, chess.ROOK, chess.QUEEN):
-        return 'pins'
-    return 'deflection'
+        if pierces(after, key.to_square, mover.color):
+            return 'pins'
+    return 'tactics'
+
+
+DIRS = {
+    chess.BISHOP: (9, 7, -7, -9),
+    chess.ROOK: (8, 1, -1, -8),
+    chess.QUEEN: (9, 8, 7, 1, -1, -7, -8, -9),
+}
+
+
+def pierces(board, sq, colour):
+    """Does the slider on `sq` line up two enemy pieces, the nearer worth less?"""
+    piece = board.piece_at(sq)
+    for d in DIRS.get(piece.piece_type, ()):
+        cur, first = sq, None
+        while True:
+            nxt = cur + d
+            if not (0 <= nxt < 64):
+                break
+            # stop the walk wrapping round the board edge
+            if chess.square_distance(cur, nxt) > 2:
+                break
+            cur = nxt
+            occupant = board.piece_at(cur)
+            if not occupant:
+                continue
+            if occupant.color == colour:
+                break
+            if first is None:
+                first = occupant
+                continue
+            if occupant.piece_type == chess.KING or VALUE_[occupant.piece_type] > VALUE_[first.piece_type]:
+                return True
+            break
+    return False
+
+
+VALUE_ = PIECE_VALUE
 
 
 def rate(board, line, ends_in_mate, gap):
